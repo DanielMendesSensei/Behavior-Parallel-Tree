@@ -1,0 +1,20 @@
+# Adapter placeholder do BPT.
+# Honra a interface inteira, mas nao conhece nenhuma stack.
+# Um adapter real (ex.: web-ts, python-fastapi) substitui os scripts em hooks/
+# mantendo este mesmo protocolo e nome de hooks.
+name: placeholder
+version: 1
+command: adapters/placeholder/bin/bpt-adapter
+
+# Unidade de execucao = o no por lado, chaveado em (lado, id).
+# Cada worktree e de um lado, uma invocacao, um alvo de deploy.
+execution_unit: side-node
+
+hooks: [scaffold, plan, execute, verify, review, codegen]
+
+notes: |
+  Apenas o hook scaffold faz trabalho real (cria as pastas espelhadas mais os
+  stubs de spec e contrato, por convencao). Os demais retornam status ok vazio.
+  A orquestracao real (worktrees, paralelismo por ondas, loop de 3 tentativas,
+  modo yolo, teste de contrato bilateral) e responsabilidade de um adapter real,
+  descrita em docs/ADAPTER.md.

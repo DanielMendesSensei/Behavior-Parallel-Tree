@@ -1,0 +1,46 @@
+# Contrato neutro de produto.listar (a junta entre backend e frontend).
+# Dados puros, tipos neutros. Sem tipo de linguagem, rota ou verbo HTTP.
+# Chaves estruturais em ingles, vocabulario de dominio em portugues (idioma hibrido).
+id: produto.listar
+version: 1                 # inteiro simples no v1 (semver/hash: futuro)
+kind: query                # query | command  (event/stream: futuro)
+title: Listar produtos
+
+authorization:
+  required: true
+  roles: [cliente]
+
+input:
+  busca:   { type: text, required: false }
+  pagina:  { type: integer, min: 1, default: 1 }
+  tamanho: { type: integer, min: 1, max: 100, default: 20 }
+
+output:
+  itens:
+    type: list
+    of:
+      object:
+        id:         { type: text }
+        nome:       { type: text }
+        preco:      { type: money }
+        disponivel: { type: boolean }
+  total:  { type: integer }
+  pagina: { type: integer }
+
+# Regra de negocio compartilhada mora aqui como DADO. Cada lado a implementa
+# a partir daqui; o teste de contrato bilateral mantem os dois honestos.
+rules:
+  - id: ordenacao
+    describe: itens ordenados por nome ascendente
+  - id: busca-case-insensitive
+    describe: busca por nome ignora caixa
+
+errors:
+  - code: PARAMETRO_INVALIDO
+    category: validation   # user | validation | system
+    retryable: false
+    when: pagina ou tamanho fora do intervalo
+  - code: NAO_AUTORIZADO
+    category: user
+    retryable: false
+    when: sessao ausente ou expirada

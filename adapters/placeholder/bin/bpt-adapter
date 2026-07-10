@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""Adapter placeholder do BPT: dispatcher.
+
+Protocolo neutro (todos os adapters honram):
+    bpt-adapter <hook> < request.json > response.json
+stdin  = 1 objeto JSON
+stdout = 1 objeto JSON
+stderr = logs
+exit 0 = adapter rodou (sucesso/falha vem no campo "status")
+exit != 0 = o adapter em si quebrou
+
+Este placeholder nao conhece nenhuma stack. Apenas o hook 'scaffold' faz trabalho
+real. Um adapter de verdade (ex.: web-ts, python-fastapi) substitui os scripts em
+hooks/ pela logica da sua stack, mantendo este mesmo protocolo.
+"""
+import os
+import subprocess
+import sys
+
+HOOKS = ["scaffold", "plan", "execute", "verify", "review", "codegen"]
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in HOOKS:
+        sys.stderr.write("uso: bpt-adapter <%s>\n" % "|".join(HOOKS))
+        return 2
+    hook = sys.argv[1]
+    here = os.path.dirname(os.path.abspath(__file__))
+    script = os.path.join(here, "..", "hooks", hook + ".py")
+    # stdin/stdout/stderr sao herdados: o hook fala direto com quem chamou.
+    return subprocess.call([sys.executable, script])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

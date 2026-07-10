@@ -1,0 +1,25 @@
+schema: bpt/v1
+project: meu-app
+adapter: placeholder
+
+# "sides" sao arvores nomeadas. Lista ABERTA: um app web usa backend + frontend,
+# uma CLI usaria apenas [cli], um servico apenas [service]. O BPT nao se prende a web.
+sides:
+  backend:  { root: apps/backend/behaviors,  kernel: apps/backend/kernel }
+  frontend: { root: apps/frontend/behaviors, kernel: apps/frontend/kernel }
+
+contracts: { root: packages/contracts }
+
+# Cada no e um comportamento. A pasta no caminho da convencao mais esta entrada
+# JA sao a declaracao completa. Nao existe arquivo de metadado por no.
+#
+# Este template nasce com 2 nos reais e validos. Exemplos avancados
+# (no one-sided, deps por lado, agrupamento por prd) estao em docs/RULEBOOK.md.
+nodes:
+  - id: produto.listar
+    sides: [backend, frontend]
+    deps: []
+
+  - id: produto.detalhar
+    sides: [backend, frontend]
+    deps: [produto.listar]   # "detalhar" consome o contrato de "listar"

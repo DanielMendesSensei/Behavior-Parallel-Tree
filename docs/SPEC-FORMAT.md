@@ -1,217 +1,215 @@
-# Como escrever uma spec.md
+# How to write a spec.md
 
-A `spec.md` e o documento humano de um comportamento. Ela descreve o QUE o
-comportamento faz, para as pessoas e para o agente, em linguagem que sobrevive a
-refatoracao. O `contract.yaml` (ao lado) fala a maquina; a `spec.md` fala a
-intencao. Os dois moram juntos e valem para os dois lados do espelho.
+The `spec.md` is a behavior's human document. It describes WHAT the behavior
+does, for people and for the agent, in language that survives refactoring. The
+`contract.yaml` (next to it) speaks to the machine; the `spec.md` speaks to the
+intent. The two live together and hold for both sides of the mirror.
 
-Regra de ouro, valida em cada linha deste documento: a spec diz o QUE, nunca o
-COMO. Ela nao cita nome de funcao, de tabela, de componente, de biblioteca nem
-de rota interna. Se um trecho so faz sentido depois de escolher a stack, ele nao
-pertence a spec.
+Golden rule, valid on every line of this document: the spec says WHAT, never
+HOW. It does not name a function, a table, a component, a library, or an internal
+route. If a passage only makes sense after choosing the stack, it does not
+belong in the spec.
 
-## Onde a spec mora
+## Where the spec lives
 
-Existe UMA spec por comportamento, ao lado do contrato, nunca duplicada por
-lado:
-
-```
-packages/contracts/<caminho>/spec.md
-packages/contracts/<caminho>/contract.yaml
-```
-
-O `<caminho>` vem do id do comportamento trocando ponto por barra. O
-comportamento `produto.listar` tem id com dois segmentos (`dominio.acao`) e vira
-o caminho `produto/listar`. Logo:
+There is ONE spec per behavior, next to the contract, never duplicated per
+side:
 
 ```
-packages/contracts/produto/listar/spec.md
-packages/contracts/produto/listar/contract.yaml
+packages/contracts/<path>/spec.md
+packages/contracts/<path>/contract.yaml
 ```
 
-O comportamento existe nas duas arvores (`apps/backend/behaviors/produto/listar/`
-e `apps/frontend/behaviors/produto/listar/`), mas a spec e o contrato ficam
-apenas em `packages/contracts`. Backend e frontend leem a mesma fonte de verdade.
-Isso e o que mantem o espelho honesto: uma so descricao, duas implementacoes.
+The `<path>` comes from the behavior's id, replacing dots with slashes. The
+behavior `product.list` has a two-segment id (`domain.action`) and becomes the
+path `product/list`. So:
 
-## Anatomia da spec
+```
+packages/contracts/product/list/spec.md
+packages/contracts/product/list/contract.yaml
+```
 
-A spec tem duas partes: o front-matter (metadados estruturais em YAML) e o corpo
-(secoes em Markdown). O idioma segue a regra hibrida do BPT: as chaves de
-estrutura ficam em ingles (`id`, `title`, `surfaces`, `contract`, `consumes`,
-`status`, `ui_bindings`); o vocabulario de dominio e os ids ficam em portugues
-(`produto.listar`, `busca`, `/produtos`).
+The behavior exists in both trees (`apps/backend/behaviors/product/list/`
+and `apps/frontend/behaviors/product/list/`), but the spec and the contract live
+only in `packages/contracts`. Backend and frontend read the same source of truth.
+That is what keeps the mirror honest: one description, two implementations.
 
-## O front-matter
+## Anatomy of the spec
 
-O front-matter e um bloco YAML no topo do arquivo, delimitado por `---`. Ele
-declara a identidade do comportamento e como ele aparece em cada superficie.
+The spec has two parts: the front-matter (structural metadata in YAML) and the
+body (Markdown sections). The language convention follows BPT's rule: structure
+keys are fixed BPT vocabulary (`id`, `title`, `surfaces`, `contract`, `consumes`,
+`status`, `ui_bindings`); the domain vocabulary and the ids describe the product
+(`product.list`, `search`, `/products`). Everything is written in English.
 
-Campos:
+## The front-matter
 
-- `id`: o id canonico do comportamento, na forma `dominio.acao`. Igual a chave no
-  `bpt.config.yaml` e ao `id` do contrato.
-- `title`: titulo curto e legivel.
-- `surfaces`: mapa de lado para superficie. Cada lado declara o `type` da
-  superficie e os dados especificos dela. Uma tela declara `route`; um endpoint
-  nao precisa de rota publica. Tipos de superficie sao um vocabulario aberto:
-  `tela`, `comando-cli`, `endpoint`, `job`, `evento`.
-- `contract`: caminho do contrato que este comportamento cumpre
-  (`produto/listar`). Um comportamento one-sided sem contrato usa
-  `contract: none`.
-- `consumes`: lista de contratos que este comportamento le de outros
-  comportamentos. Vazia (`[]`) quando ele nao depende de nenhum contrato alheio.
-- `status`: mapa de lado para estado. Os estados avancam nesta ordem:
-  `draft` (so a spec existe), `ready` (spec fechada, pronta para construir),
-  `built` (implementado) e `verified` (cenarios passaram no verify). Cada lado
-  caminha no seu proprio ritmo.
-- `ui_bindings`: mapa neutro de superficie para handle estavel. E o ponto de
-  ancoragem por onde o teste de tela encontra um elemento sem depender do nome
-  interno do componente. Continua sendo o QUE (existe um alvo chamado assim), nao
-  o COMO.
+The front-matter is a YAML block at the top of the file, delimited by `---`. It
+declares the behavior's identity and how it appears on each surface.
 
-## As secoes do corpo
+Fields:
 
-Depois do front-matter vem o corpo, sempre nesta ordem:
+- `id`: the behavior's canonical id, in the form `domain.action`. Equal to the
+  key in `bpt.config.yaml` and to the contract's `id`.
+- `title`: a short, readable title.
+- `surfaces`: a map from side to surface. Each side declares the surface `type`
+  and its specific data. A screen declares a `route`; an endpoint does not need a
+  public route. Surface types are an open vocabulary: `screen`, `cli-command`,
+  `endpoint`, `job`, `event`.
+- `contract`: the path of the contract this behavior fulfills (`product/list`).
+  A one-sided behavior without a contract uses `contract: none`.
+- `consumes`: the list of contracts this behavior reads from other behaviors.
+  Empty (`[]`) when it does not depend on any external contract.
+- `status`: a map from side to state. The states advance in this order:
+  `draft` (only the spec exists), `ready` (spec finalized, ready to build),
+  `built` (implemented), and `verified` (scenarios passed in verify). Each side
+  walks at its own pace.
+- `ui_bindings`: a neutral map from surface to a stable handle. It is the anchor
+  point through which the screen test finds an element without depending on the
+  component's internal name. It is still the WHAT (a target exists by that name),
+  not the HOW.
 
-### Comportamento
+## The body sections
 
-Duas coisas em prosa curta: a acao que o comportamento oferece e o resultado que
-o usuario obtem. Sem passos internos, sem mencao a como o dado e buscado.
+After the front-matter comes the body, always in this order:
 
-### Regras
+### Behavior
 
-As regras de negocio observaveis, em lista. Cada regra tem um id curto e uma
-descricao. As mesmas regras aparecem no bloco `rules` do contrato: la elas viram
-dado que cada lado implementa, aqui elas viram texto para o leitor. Uma regra
-nunca vira codigo compartilhado; o teste bilateral e que mantem os dois lados
-honestos.
+Two things in short prose: the action the behavior offers and the result the
+user obtains. No internal steps, no mention of how the data is fetched.
 
-### Cenarios
+### Rules
 
-Os cenarios descrevem o comportamento observavel no formato dado / quando /
-entao. O `entao` e projetado por superficie: um mesmo `dado`/`quando` pode ter um
-`entao` marcado com `[contrato]` (o que o backend garante) e outro marcado com
-`[tela]` (o que o usuario ve). O verify do backend roda os `entao` de contrato; o
-do frontend roda os de tela.
+The observable business rules, as a list. Each rule has a short id and a
+description. The same rules appear in the contract's `rules` block: there they
+become data that each side implements, here they become text for the reader. A
+rule never becomes shared code; the bilateral test is what keeps both sides
+honest.
 
-Um cenario testa comportamento, nao implementacao: ele nunca cita nome de funcao
-ou de tabela e sobrevive a um refactor completo por dentro.
+### Scenarios
 
-### Fora de escopo
+The scenarios describe observable behavior in the given / when / then format.
+The `then` is projected per surface: the same `given`/`when` can have a `then`
+marked `[contract]` (what the backend guarantees) and another marked `[screen]`
+(what the user sees). The backend verify runs the contract `then` clauses; the
+frontend verify runs the screen ones.
 
-O que este comportamento deliberadamente nao faz. Serve para cortar suposicao e
-impedir que o comportamento cresca sem decisao explicita.
+A scenario tests behavior, not implementation: it never names a function or a
+table, and it survives a complete internal refactor.
 
-## Exemplo guiado: produto.listar
+### Out of scope
 
-Abaixo esta a spec real de `produto.listar`, campo a campo.
+What this behavior deliberately does not do. It serves to cut off assumptions
+and keep the behavior from growing without an explicit decision.
+
+## Guided example: product.list
+
+Below is the real spec for `product.list`, field by field.
 
 ```markdown
 ---
-id: produto.listar
-title: Listar produtos
+id: product.list
+title: List products
 surfaces:
   frontend:
-    type: tela
-    route: /produtos
+    type: screen
+    route: /products
   backend:
     type: endpoint
-contract: produto/listar
+contract: product/list
 consumes: []
 status:
   backend: draft
   frontend: draft
 ui_bindings:
   frontend:
-    campo-busca: busca-produtos
-    lista-resultados: lista-produtos
-    rotulo-total: total-produtos
+    search-field: product-search
+    results-list: product-list
+    total-label: product-total
 ---
 
-# Comportamento
+# Behavior
 
-O cliente lista os produtos disponiveis e pode filtrar por um texto de busca.
-O resultado vem paginado, com o total de itens encontrados.
+The customer lists the available products and can filter by a search text.
+The result comes paginated, with the total number of items found.
 
-# Regras
+# Rules
 
-- ordenacao: os itens saem ordenados por nome em ordem ascendente.
-- busca-case-insensitive: a busca ignora a diferenca entre maiusculas e
-  minusculas.
+- ordering: the items come sorted by name in ascending order.
+- search-case-insensitive: the search ignores the difference between uppercase
+  and lowercase.
 
-# Cenarios
+# Scenarios
 
-## Listagem sem busca
+## Listing without search
 
-- Dado que existem produtos disponiveis
-- Quando o cliente abre a listagem sem informar busca
-- Entao [contrato] retorna a primeira pagina com ate 20 itens, ordenados por
-  nome ascendente, e o total de itens
-- Entao [tela] a lista de resultados mostra os produtos em ordem de nome e
-  exibe o total encontrado
+- Given that available products exist
+- When the customer opens the listing without providing a search
+- Then [contract] returns the first page with up to 20 items, sorted by name
+  ascending, and the total number of items
+- Then [screen] the results list shows the products in name order and displays
+  the total found
 
-## Busca por texto
+## Text search
 
-- Dado que existem produtos cujo nome contem "cafe" em qualquer caixa
-- Quando o cliente informa "CAFE" no campo de busca
-- Entao [contrato] retorna apenas os itens cujo nome casa com o texto,
-  ignorando a caixa
-- Entao [tela] a lista de resultados mostra somente os produtos que casam com
-  a busca
+- Given that products exist whose name contains "coffee" in any case
+- When the customer types "COFFEE" in the search field
+- Then [contract] returns only the items whose name matches the text, ignoring
+  case
+- Then [screen] the results list shows only the products that match the search
 
-## Parametro invalido
+## Invalid parameter
 
-- Dado que o cliente pede uma pagina menor que 1
-- Quando a requisicao chega
-- Entao [contrato] responde com o erro PARAMETRO_INVALIDO
+- Given that the customer requests a page smaller than 1
+- When the request arrives
+- Then [contract] responds with the INVALID_PARAMETER error
 
-# Fora de escopo
+# Out of scope
 
-- Ordenacao por outros campos alem de nome.
-- Detalhe de um produto individual (isso e produto.detalhar).
-- Estoque em tempo real.
+- Sorting by fields other than name.
+- Detail of an individual product (that is product.detail).
+- Real-time stock.
 ```
 
-### Lendo o front-matter do exemplo
+### Reading the example front-matter
 
-- `id: produto.listar` e `title: Listar produtos`: a identidade, identica a
-  chave no config e ao id do contrato.
-- `surfaces`: o comportamento aparece como `tela` no frontend, na rota
-  `/produtos`, e como `endpoint` no backend. O mesmo comportamento, duas
-  superficies.
-- `contract: produto/listar`: aponta para
-  `packages/contracts/produto/listar/contract.yaml`, que fica no mesmo diretorio.
-- `consumes: []`: `produto.listar` nao le nenhum contrato de outro comportamento.
-  (Ja `produto.detalhar` teria `produto/listar` aqui se dependesse do contrato
-  dele.)
-- `status`: ambos os lados comecam em `draft`. Conforme o trabalho anda, cada
-  lado sobe pela escada `draft` para `ready` para `built` para `verified` no seu
-  proprio ritmo.
-- `ui_bindings`: para a superficie de tela, os handles estaveis
-  (`busca-produtos`, `lista-produtos`, `total-produtos`) permitem que o teste de
-  tela encontre os elementos sem saber o nome do componente que os renderiza.
+- `id: product.list` and `title: List products`: the identity, identical to the
+  key in the config and to the contract's id.
+- `surfaces`: the behavior appears as a `screen` on the frontend, at the route
+  `/products`, and as an `endpoint` on the backend. The same behavior, two
+  surfaces.
+- `contract: product/list`: points to
+  `packages/contracts/product/list/contract.yaml`, which sits in the same directory.
+- `consumes: []`: `product.list` does not read any contract from another behavior.
+  (`product.detail`, by contrast, would have `product/list` here if it depended on
+  its contract.)
+- `status`: both sides start in `draft`. As the work moves along, each side climbs
+  the ladder from `draft` to `ready` to `built` to `verified` at its own pace.
+- `ui_bindings`: for the screen surface, the stable handles
+  (`product-search`, `product-list`, `product-total`) let the screen test find the
+  elements without knowing the name of the component that renders them.
 
-### Lendo o corpo do exemplo
+### Reading the example body
 
-- Comportamento: duas frases. Diz a acao (listar e filtrar) e o resultado
-  (pagina com total). Nao diz como a busca acontece.
-- Regras: `ordenacao` e `busca-case-insensitive` sao as mesmas duas regras do
-  bloco `rules` do contrato. A spec descreve; o contrato carrega o dado; cada
-  lado implementa; o teste bilateral cobra os dois.
-- Cenarios: cada um separa `[contrato]` de `[tela]`. Repare que o cenario de
-  parametro invalido so tem `[contrato]`, porque o erro `PARAMETRO_INVALIDO` e
-  uma garantia do backend. Nenhum cenario menciona funcao, tabela ou componente.
-- Fora de escopo: corta ordenacao alternativa, detalhe de produto e estoque, para
-  que ninguem assuma esses comportamentos por conta propria.
+- Behavior: two sentences. It states the action (list and filter) and the result
+  (a page with a total). It does not say how the search happens.
+- Rules: `ordering` and `search-case-insensitive` are the same two rules from the
+  contract's `rules` block. The spec describes; the contract carries the data;
+  each side implements; the bilateral test holds both accountable.
+- Scenarios: each one separates `[contract]` from `[screen]`. Note that the
+  invalid-parameter scenario has only `[contract]`, because the `INVALID_PARAMETER`
+  error is a backend guarantee. No scenario mentions a function, a table, or a
+  component.
+- Out of scope: it cuts alternative sorting, product detail, and stock, so that
+  nobody assumes those behaviors on their own.
 
-## Checklist antes de marcar ready
+## Checklist before marking ready
 
-- O `id` no front-matter bate com o `bpt.config.yaml` e com o contrato.
-- Todo lado listado em `surfaces` tem entrada em `status`.
-- Existe pelo menos um cenario por superficie ativa, com `[contrato]` e `[tela]`
-  onde faz sentido.
-- Nenhuma linha da spec cita funcao, tabela, componente, biblioteca ou rota
-  interna: so o QUE.
-- As regras da spec correspondem ao bloco `rules` do contrato.
-- Fora de escopo esta preenchido com o que foi deliberadamente deixado de fora.
+- The `id` in the front-matter matches `bpt.config.yaml` and the contract.
+- Every side listed in `surfaces` has an entry in `status`.
+- There is at least one scenario per active surface, with `[contract]` and `[screen]`
+  where it makes sense.
+- No line of the spec names a function, a table, a component, a library, or an
+  internal route: only the WHAT.
+- The spec's rules correspond to the contract's `rules` block.
+- Out of scope is filled in with what was deliberately left out.

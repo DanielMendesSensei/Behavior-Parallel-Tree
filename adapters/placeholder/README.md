@@ -1,70 +1,70 @@
-# Adapter Placeholder
+# Placeholder Adapter
 
-Este adapter honra a interface inteira do BPT, mas nao conhece nenhuma stack. Ele existe para provar o contrato de adapter e para deixar o template rodavel sem escolher linguagem, framework ou runtime. Dos seis hooks, apenas o `scaffold` faz trabalho real; os outros cinco respondem com um status ok vazio.
+This adapter honors the entire BPT interface but knows no stack. It exists to prove the adapter contract and to keep the template runnable without choosing a language, framework, or runtime. Of the six hooks, only `scaffold` does real work; the other five respond with an empty ok status.
 
-O nucleo do BPT declara (arvore, espelho, contrato, spec) e o adapter executa (worktrees, paralelismo, loop). Este placeholder ocupa o lugar do executor sem executar de fato.
+The BPT core declares (tree, mirror, contract, spec) and the adapter executes (worktrees, parallelism, loop). This placeholder fills the executor's place without actually executing.
 
-## Protocolo
+## Protocol
 
-O adapter e um executavel declarado no `bpt.config.yaml` (aqui, `adapter: placeholder`). O nucleo invoca sempre da mesma forma:
+The adapter is an executable declared in `bpt.config.yaml` (here, `adapter: placeholder`). The core always invokes it the same way:
 
 ```
 bpt-adapter <hook>
 ```
 
-- Le **um** objeto JSON de `stdin`.
-- Escreve **um** objeto JSON em `stdout`.
-- Manda logs para `stderr`.
-- `exit 0` significa que o hook rodou (o resultado real vai no `status` do payload).
-- `exit != 0` significa que o adapter quebrou.
+- Reads **one** JSON object from `stdin`.
+- Writes **one** JSON object to `stdout`.
+- Sends logs to `stderr`.
+- `exit 0` means the hook ran (the actual result goes in the payload's `status`).
+- `exit != 0` means the adapter broke.
 
-A unidade de execucao e o **no por lado**, chaveada em `(lado, id)`. Cada no-por-lado roda em uma worktree propria. Pode existir um adapter por lado, ou seja, `backend` e `frontend` podem apontar para executaveis diferentes, cada um falando o mesmo protocolo neutro.
+The unit of execution is the **node per side**, keyed on `(side, id)`. Each node-per-side runs in its own worktree. There can be one adapter per side, that is, `backend` and `frontend` can point to different executables, each speaking the same neutral protocol.
 
-## Os seis hooks
+## The six hooks
 
-| hook | papel | neste placeholder |
+| hook | role | in this placeholder |
 | --- | --- | --- |
-| `scaffold` | cria pastas espelhadas + stub de contrato e spec, idempotente | faz trabalho real |
-| `plan` | monta o plano tecnico, nao escreve produto | status ok vazio |
-| `execute` | implementa so nas pastas do no | status ok vazio |
-| `verify` | roda cenarios da superficie + unit tests + checa direcao de import | status ok vazio |
-| `review` | revisao semantica | status ok vazio |
-| `codegen` | materializa o contrato neutro em tipos/validadores da stack em `__generated__/` | status ok vazio |
+| `scaffold` | creates mirrored folders + contract and spec stubs, idempotent | does real work |
+| `plan` | builds the technical plan, writes no product | empty ok status |
+| `execute` | implements only in the node's folders | empty ok status |
+| `verify` | runs surface scenarios + unit tests + checks import direction | empty ok status |
+| `review` | semantic review | empty ok status |
+| `codegen` | materializes the neutral contract into the stack's types/validators in `__generated__/` | empty ok status |
 
-## Exemplo: chamando o scaffold
+## Example: calling scaffold
 
-Voce passa por pipe o JSON de um no, com `id` e `sides`, para o hook `scaffold`:
+You pipe a node's JSON, with `id` and `sides`, to the `scaffold` hook:
 
 ```
 echo '{
-  "id": "produto.listar",
+  "id": "product.list",
   "sides": ["backend", "frontend"]
 }' | bin/bpt-adapter scaffold
 ```
 
-O que ele cria, seguindo as formas canonicas (`id` `produto.listar` vira caminho `produto/listar`):
+What it creates, following the canonical forms (`id` `product.list` becomes path `product/list`):
 
-- `apps/backend/behaviors/produto/listar/` com `src/` e `__generated__/`.
-- `apps/frontend/behaviors/produto/listar/` com `src/` e `__generated__/`.
-- `packages/contracts/produto/listar/contract.yaml` (stub), se ainda nao existir.
-- `packages/contracts/produto/listar/spec.md` (stub a partir da spec), se ainda nao existir.
+- `apps/backend/behaviors/product/list/` with `src/` and `__generated__/`.
+- `apps/frontend/behaviors/product/list/` with `src/` and `__generated__/`.
+- `packages/contracts/product/list/contract.yaml` (stub), if it does not exist yet.
+- `packages/contracts/product/list/spec.md` (stub from the spec), if it does not exist yet.
 
-O scaffold e **idempotente**: rodar de novo sobre um no ja criado nao apaga nem duplica nada. As pastas espelhadas nos dois lados compartilham uma unica spec, que mora ao lado do contrato, nunca duplicada por lado. O `src/` e para codigo humano; o `__generated__/` fica vazio aqui, porque quem o preenche e o `codegen` de um adapter real.
+Scaffold is **idempotent**: running it again on an already created node neither erases nor duplicates anything. The mirrored folders on both sides share a single spec, which lives next to the contract, never duplicated per side. `src/` is for human code; `__generated__/` stays empty here, because what fills it is the `codegen` of a real adapter.
 
-Nao existe arquivo de metadado por no: a pasta na convencao mais a entrada no `bpt.config.yaml` ja sao a declaracao.
+There is no per-node metadata file: the folder in the convention plus the entry in `bpt.config.yaml` are already the declaration.
 
-## De placeholder para adapter real
+## From placeholder to real adapter
 
-Um adapter real nao muda o protocolo, ele troca a implementacao. Voce substitui os scripts em `hooks/` pela logica da sua stack:
+A real adapter does not change the protocol, it swaps the implementation. You replace the scripts in `hooks/` with your stack's logic:
 
-- `hooks/plan` passa a produzir um plano tecnico de verdade.
-- `hooks/execute` passa a escrever codigo dentro das pastas do no.
-- `hooks/verify` passa a rodar os cenarios da superficie, os unit tests e a checagem de direcao de import (reprova `kernel -> behaviors/*` e `behaviors/a -> behaviors/b`).
-- `hooks/review` passa a fazer revisao semantica.
-- `hooks/codegen` passa a materializar o contrato neutro em tipos e validadores da stack, dentro de `__generated__/`.
+- `hooks/plan` starts producing a real technical plan.
+- `hooks/execute` starts writing code inside the node's folders.
+- `hooks/verify` starts running the surface scenarios, the unit tests, and the import-direction check (fails `kernel -> behaviors/*` and `behaviors/a -> behaviors/b`).
+- `hooks/review` starts doing semantic review.
+- `hooks/codegen` starts materializing the neutral contract into the stack's types and validators, inside `__generated__/`.
 
-Como pode haver um adapter por lado, um lado backend pode gerar tipos de uma linguagem e o lado frontend de outra, cada um lendo o mesmo contrato neutro.
+Since there can be one adapter per side, a backend side can generate types in one language and the frontend side in another, each reading the same neutral contract.
 
-## Onde continuar
+## Where to continue
 
-A referencia completa da interface, dos payloads e da orquestracao que um adapter real deve honrar (worktree por no-por-lado na branch `bpt/<lado>/<id>`, ondas de kernel primeiro, loop `codegen -> plan -> execute -> verify -> review` com ate 3 tentativas, teste de contrato bilateral) esta em `docs/ADAPTER.md`.
+The complete reference for the interface, the payloads, and the orchestration that a real adapter must honor (worktree per node-per-side on branch `bpt/<side>/<id>`, kernel waves first, `codegen -> plan -> execute -> verify -> review` loop with up to 3 attempts, bilateral contract test) is in `docs/ADAPTER.md`.

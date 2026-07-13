@@ -1,187 +1,187 @@
-# Como adicionar um comportamento (o 2o, o 3o, o N)
+# How to add a behavior (the 2nd, the 3rd, the Nth)
 
-Este guia mostra o caminho completo para colocar um novo comportamento no ar dentro do BPT: escolher o id, rodar o scaffold, preencher a spec e o contrato, registrar o no e validar. O template ja nasce com dois nos reais (`produto.listar` e `produto.detalhar`), entao use-os como referencia viva enquanto le.
+This guide shows the complete path to getting a new behavior live inside BPT: choosing the id, running the scaffold, filling in the spec and the contract, registering the node, and validating. The template is born with two real nodes (`product.list` and `product.detail`), so use them as a living reference while you read.
 
-A ideia central: cada comportamento e uma ilha. Voce deve conseguir construi-lo olhando so a pasta dele, o contrato que ele expoe e os contratos que ele consome. Se voce precisar abrir o codigo de outro comportamento para terminar o seu, algo esta errado na modelagem.
+The central idea: each behavior is an island. You should be able to build it looking only at its own folder, the contract it exposes, and the contracts it consumes. If you need to open another behavior's code to finish yours, something is wrong in the modeling.
 
-## 1. Escolha o id (dominio.acao)
+## 1. Choose the id (domain.action)
 
-O id e a identidade do comportamento nos dois lados. Ele obedece a forma canonica:
+The id is the behavior's identity on both sides. It follows the canonical form:
 
-- Tudo minusculo, o ponto separa segmentos, o hifen serve para palavra composta.
-- De 2 a 3 segmentos, prefira 2. Exemplos bons: `produto.listar`, `carrinho.revisar`, `pagamento.cartao.autorizar`.
-- O primeiro segmento e o dominio (`produto`, `carrinho`, `pagamento`), o ultimo e a acao (`listar`, `revisar`, `autorizar`).
-- Evite `kernel` como dominio: ele e reservado para a infra transversal e o validador reprova qualquer id sob a pasta de kernel.
+- All lowercase, the dot separates segments, the hyphen serves for compound words.
+- 2 to 3 segments, prefer 2. Good examples: `product.list`, `cart.review`, `payment.card.authorize`.
+- The first segment is the domain (`product`, `cart`, `payment`), the last is the action (`list`, `review`, `authorize`).
+- Avoid `kernel` as a domain: it is reserved for cross-cutting infrastructure, and the validator rejects any id under the kernel folder.
 
-O id vira caminho trocando ponto por barra:
+The id becomes a path by swapping the dot for a slash:
 
-- `produto.detalhar` vira o caminho `produto/detalhar`.
-- Comportamento: `apps/<lado>/behaviors/produto/detalhar/`
-- Contrato: `packages/contracts/produto/detalhar/contract.yaml`
-- Spec: `packages/contracts/produto/detalhar/spec.md`
+- `product.detail` becomes the path `product/detail`.
+- Behavior: `apps/<side>/behaviors/product/detail/`
+- Contract: `packages/contracts/product/detail/contract.yaml`
+- Spec: `packages/contracts/product/detail/spec.md`
 
-Nao existe arquivo de metadado por no. A pasta na convencao mais a entrada no `bpt.config.yaml` ja sao toda a declaracao do comportamento.
+There is no per-node metadata file. The folder following the convention plus the entry in `bpt.config.yaml` are already the whole declaration of the behavior.
 
-## 2. Rode o scaffold do adapter
+## 2. Run the adapter's scaffold
 
-O scaffold cria as pastas espelhadas nos lados escolhidos e gera os stubs de contrato e spec. Ele e idempotente: rodar de novo nao quebra nada. O protocolo do adapter e neutro: ele le um JSON de stdin, escreve um JSON em stdout e manda logs para stderr.
+The scaffold creates the mirrored folders on the chosen sides and generates the contract and spec stubs. It is idempotent: running it again breaks nothing. The adapter protocol is neutral: it reads one JSON from stdin, writes one JSON to stdout, and sends logs to stderr.
 
-Comando exato (troque o id e os sides conforme o seu no):
+Exact command (swap the id and the sides for your node):
 
 ```bash
-echo '{"id":"produto.detalhar","sides":["backend","frontend"],"paths":{"backend":"apps/backend/behaviors/produto/detalhar","frontend":"apps/frontend/behaviors/produto/detalhar","contract":"packages/contracts/produto/detalhar"}}' \
+echo '{"id":"product.detail","sides":["backend","frontend"],"paths":{"backend":"apps/backend/behaviors/product/detail","frontend":"apps/frontend/behaviors/product/detail","contract":"packages/contracts/product/detail"}}' \
   | adapters/placeholder/bin/bpt-adapter scaffold
 ```
 
-O adapter placeholder implementa o `scaffold` de verdade: ele cria as pastas do no em cada lado (com `src/` para o codigo humano e `__generated__/` para o codigo gerado depois pelo `codegen`) e deixa os stubs de `contract.yaml` e `spec.md` prontos para voce preencher. Os outros cinco hooks (`plan`, `execute`, `verify`, `review`, `codegen`) no placeholder apenas retornam status ok vazio, entao a construcao do produto em si voce faz a mao neste template.
+The placeholder adapter implements `scaffold` for real: it creates the node's folders on each side (with `src/` for human code and `__generated__/` for the code later generated by `codegen`) and leaves the `contract.yaml` and `spec.md` stubs ready for you to fill in. The other five hooks (`plan`, `execute`, `verify`, `review`, `codegen`) in the placeholder just return an empty ok status, so in this template you build the product itself by hand.
 
-Leitura do resultado:
+Reading the result:
 
-- `exit 0` significa que o adapter rodou. O status real vem no JSON de stdout.
-- `exit` diferente de 0 significa que o adapter quebrou, e nao que o comportamento falhou.
+- `exit 0` means the adapter ran. The real status comes in the stdout JSON.
+- `exit` other than 0 means the adapter broke, not that the behavior failed.
 
-## 3. Preencha a spec.md
+## 3. Fill in the spec.md
 
-A spec e a fonte de verdade do comportamento observavel. Ela mora ao lado do contrato, uma so por comportamento, nunca duplicada por lado. Estrutura:
+The spec is the source of truth for the observable behavior. It lives next to the contract, one per behavior, never duplicated per side. Structure:
 
 Front-matter:
 
 - `id`, `title`
-- `surfaces`: o que cada lado expoe. Ex.: `frontend { type: tela, route: /produtos }`, `backend { type: endpoint }`. Superficies possiveis: `tela`, `comando-cli`, `endpoint`, `job`, `evento`.
-- `contract`: o caminho do contrato (`produto/detalhar`), ou nada quando o no e one-sided (veja a secao 6).
-- `consumes`: lista de contratos que este comportamento le de outros (ex.: `[produto/listar]`). Vazio se ele nao compoe ninguem.
-- `status`: por lado, um de `draft`, `ready`, `built`, `verified`. Comeca em `draft` dos dois lados.
-- `ui_bindings`: mapa neutro superficie -> handle estavel, para os testes de tela amarrarem sem depender de nome de funcao.
+- `surfaces`: what each side exposes. E.g.: `frontend { type: screen, route: /products }`, `backend { type: endpoint }`. Possible surfaces: `screen`, `cli-command`, `endpoint`, `job`, `event`.
+- `contract`: the contract path (`product/detail`), or nothing when the node is one-sided (see section 6).
+- `consumes`: list of contracts this behavior reads from others (e.g.: `[product/list]`). Empty if it composes no one.
+- `status`: per side, one of `draft`, `ready`, `built`, `verified`. Starts at `draft` on both sides.
+- `ui_bindings`: a neutral surface -> stable handle map, so the screen tests bind without depending on a function name.
 
-Secoes do corpo:
+Body sections:
 
-- **Comportamento**: a acao e o resultado, em uma frase clara.
-- **Regras**: o que sempre vale (ordenacao, normalizacao, limites).
-- **Cenarios**: no formato dado / quando / entao, um por superficie. Marque cada cenario com `[contrato]` (roda no verify do backend) ou `[tela]` (roda no verify do frontend). O "entao" e projetado por superficie: o mesmo cenario tem consequencia observavel diferente em cada lado.
-- **Fora de escopo**: o que este comportamento deliberadamente nao faz.
+- **Behavior**: the action and the result, in one clear sentence.
+- **Rules**: what always holds (ordering, normalization, limits).
+- **Scenarios**: in given / when / then format, one per surface. Mark each scenario with `[contract]` (runs in the backend verify) or `[screen]` (runs in the frontend verify). The "then" is projected per surface: the same scenario has a different observable consequence on each side.
+- **Out of scope**: what this behavior deliberately does not do.
 
-Os cenarios testam comportamento observavel, sobrevivem a refactor e nunca citam nome de funcao ou de tabela.
+Scenarios test observable behavior, survive a refactor, and never mention a function or table name.
 
-## 4. Preencha o contract.yaml
+## 4. Fill in the contract.yaml
 
-O contrato e o YAML neutro que liga os dois lados. Nenhuma linguagem, framework ou runtime aparece aqui. Tipos neutros disponiveis: `text`, `integer`, `decimal`, `boolean`, `money`, `list`, `object`.
+The contract is the neutral YAML that ties the two sides together. No language, framework, or runtime appears here. Available neutral types: `text`, `integer`, `decimal`, `boolean`, `money`, `list`, `object`.
 
-Campos:
+Fields:
 
-- `id`, `version`, `kind` (`query` ou `command`), `title`.
-- `authorization`: `required` e `roles`.
-- `input`: parametros com tipo, restricoes (`min`, `max`, `default`) e se sao opcionais.
-- `output`: a forma do resultado, com `list of object { ... }` quando for colecao.
-- `rules`: as regras de negocio compartilhadas, como DADO. Cada lado implementa a mesma regra; um teste de contrato bilateral mantem os dois honestos. Nao existe pacote de dominio em codigo compartilhado, a regra vive aqui e so aqui.
-- `errors`: lista de erros com categoria (`validation`, `user`, ...) e se e retryable.
+- `id`, `version`, `kind` (`query` or `command`), `title`.
+- `authorization`: `required` and `roles`.
+- `input`: parameters with type, constraints (`min`, `max`, `default`) and whether they are optional.
+- `output`: the shape of the result, with `list of object { ... }` when it is a collection.
+- `rules`: the shared business rules, as data. Each side implements the same rule; a bilateral contract test keeps both honest. There is no domain package in shared code, the rule lives here and only here.
+- `errors`: list of errors with a category (`validation`, `user`, ...) and whether it is retryable.
 
-Referencia viva: `packages/contracts/produto/listar/contract.yaml`.
+Living reference: `packages/contracts/product/list/contract.yaml`.
 
-## 5. Registre o no no bpt.config.yaml
+## 5. Register the node in bpt.config.yaml
 
-O `bpt.config.yaml` na raiz e o arquivo unico que declara todos os nos. Adicione o seu na lista `nodes`, informando os `sides` que ele ocupa e as `deps`:
+The `bpt.config.yaml` at the root is the single file that declares all nodes. Add yours to the `nodes` list, stating the `sides` it occupies and the `deps`:
 
 ```yaml
 nodes:
-  produto.listar:
+  product.list:
     sides: [backend, frontend]
     deps: []
-  produto.detalhar:
+  product.detail:
     sides: [backend, frontend]
-    deps: [produto.listar]
+    deps: [product.list]
 ```
 
-Sobre `deps`:
+About `deps`:
 
-- `deps` sao os comportamentos que precisam existir antes do seu. O nucleo usa isso para derivar as ondas de paralelismo por ordem topologica.
-- O grafo deve ser aciclico. Sem auto-dependencia. Sem ciclo.
-- Quando o grafo diverge entre os lados, declare `deps` por lado:
+- `deps` are the behaviors that must exist before yours. The core uses this to derive the parallelism waves by topological order.
+- The graph must be acyclic. No self-dependency. No cycle.
+- When the graph diverges between sides, declare `deps` per side:
 
 ```yaml
-  checkout.pagar:
+  checkout.pay:
     sides: [backend, frontend]
     deps:
-      backend: [pagamento.cartao.autorizar]
-      frontend: [carrinho.revisar]
+      backend: [payment.card.authorize]
+      frontend: [cart.review]
     prd: checkout-v1
 ```
 
-`sides` e uma lista aberta. Um comportamento so de linha de comando usaria `sides: [cli]`.
+`sides` is an open list. A command-line-only behavior would use `sides: [cli]`.
 
-## 6. Quando o no e one-sided (contract: none)
+## 6. When the node is one-sided (contract: none)
 
-Nem todo comportamento existe nos dois lados. Um no que so vive no frontend (por exemplo uma tela que apenas recombina dados que ja vem de outro contrato) e one-sided. Nesse caso:
+Not every behavior exists on both sides. A node that only lives on the frontend (for example a screen that just recombines data already coming from another contract) is one-sided. In that case:
 
-- Ele declara um unico lado em `sides`.
-- Ele nao expoe contrato proprio: na spec, `contract: none`.
-- Ele consome os contratos de que precisa via `consumes`.
+- It declares a single side in `sides`.
+- It exposes no contract of its own: in the spec, `contract: none`.
+- It consumes the contracts it needs via `consumes`.
 
-Exemplo (documental, nao esta no config vivo):
+Example (documentation only, not in the live config):
 
 ```yaml
-  catalogo.filtrar:
+  catalog.filter:
     sides: [frontend]
-    deps: [produto.listar]
-    # contract: none  (declarado na spec; consome produto/listar)
+    deps: [product.list]
+    # contract: none  (declared in the spec; consumes product/list)
 ```
 
-O validador cobra a coerencia: no two-sided precisa de contrato; no one-sided precisa de `contract: none`.
+The validator enforces coherence: a two-sided node needs a contract; a one-sided node needs `contract: none`.
 
-## 7. Quando o no compoe (consumes)
+## 7. When the node composes (consumes)
 
-`consumes` e como um comportamento le contratos de outros comportamentos sem tocar no codigo deles. E aqui que a topologia N:M aparece:
+`consumes` is how a behavior reads contracts from other behaviors without touching their code. This is where the N:M topology appears:
 
-- Uma tela composta consome varios contratos: `consumes: [produto.listar, promocao.vigentes, estoque.disponibilidade]`.
-- Um contrato serve varias telas ao mesmo tempo, sem saber quem o consome.
+- A composed screen consumes several contracts: `consumes: [product.list, promotion.active, inventory.availability]`.
+- A contract serves several screens at the same time, without knowing who consumes it.
 
-`consumes` entra tanto na spec (front-matter) quanto conta como dependencia no grafo. As refs precisam existir, senao o validate reprova.
+`consumes` goes both into the spec (front-matter) and counts as a dependency in the graph. The refs must exist, otherwise validate fails.
 
-## Regra que nunca se quebra: comportamento nao importa de comportamento
+## The rule that is never broken: a behavior does not import from a behavior
 
-Um comportamento pode:
+A behavior may:
 
-- importar do kernel do seu lado (infra transversal),
-- ler contratos (o proprio e os que constam em `consumes`),
-- e nada mais fora da sua propria pasta.
+- import from its side's kernel (cross-cutting infrastructure),
+- read contracts (its own and those listed in `consumes`),
+- and nothing else outside its own folder.
 
-Um comportamento nunca importa o codigo de outro comportamento. A ligacao entre eles e sempre o contrato neutro, nunca o import direto. O kernel tambem obedece a direcao: comportamento importa do kernel, o kernel nunca importa de comportamento.
+A behavior never imports another behavior's code. The link between them is always the neutral contract, never the direct import. The kernel also obeys the direction: a behavior imports from the kernel, the kernel never imports from a behavior.
 
-O `verify` do adapter e o guardiao dessa direcao. Ele:
+The adapter's `verify` is the guardian of that direction. It:
 
-- reprova `kernel -> behaviors/*`
-- reprova `behaviors/a -> behaviors/b`
-- permite `behaviors/* -> kernel`, `behaviors/* -> contracts`, `kernel -> kernel`, `kernel -> contracts`
+- rejects `kernel -> behaviors/*`
+- rejects `behaviors/a -> behaviors/b`
+- permits `behaviors/* -> kernel`, `behaviors/* -> contracts`, `kernel -> kernel`, `kernel -> contracts`
 
-Se voce sentir vontade de importar de outro comportamento, a resposta e uma destas: consuma o contrato dele via `consumes`, ou promova o pedaco comum ao kernel (so quando ele e transversal, usado por 2 ou mais comportamentos e descritivel sem citar nome de comportamento), ou mova a regra compartilhada para o bloco `rules` do contrato como dado.
+If you feel the urge to import from another behavior, the answer is one of these: consume its contract via `consumes`, or promote the common piece to the kernel (only when it is cross-cutting, used by 2 or more behaviors, and describable without citing a behavior name), or move the shared rule to the contract's `rules` block as data.
 
-## 8. Rode o validador ate passar
+## 8. Run the validator until it passes
 
-O validador e minimo e vive fora da stack do app (Python 3 mais PyYAML, tooling trocavel):
+The validator is minimal and lives outside the app's stack (Python 3 plus PyYAML, swappable tooling):
 
 ```bash
 ./bpt validate
 ```
 
-Ele roda sete invariantes:
+It runs seven invariants:
 
-1. `schema` presente e suportado (`bpt/v1`).
-2. `id` unico e no formato `dominio.acao`.
-3. `sides` nao vazio e cada lado declarado existe.
-4. refs de `deps` e `consumes` existem, sem auto-dependencia, grafo aciclico (se houver ciclo, ele aponta o ciclo).
-5. no two-sided tem contrato; no one-sided tem `contract: none`.
-6. nenhum id sob pasta de kernel (o dominio `kernel` e reservado).
-7. o trio de arquivos existe: contrato mais spec mais a pasta do no em cada lado.
+1. `schema` present and supported (`bpt/v1`).
+2. `id` unique and in the `domain.action` format.
+3. `sides` not empty and each declared side exists.
+4. `deps` and `consumes` refs exist, no self-dependency, acyclic graph (if there is a cycle, it points to the cycle).
+5. a two-sided node has a contract; a one-sided node has `contract: none`.
+6. no id under the kernel folder (the `kernel` domain is reserved).
+7. the file trio exists: contract plus spec plus the node's folder on each side.
 
-Alem de validar, o nucleo deriva dai as ondas de paralelismo por ordem topologica: o adapter usa essas ondas para construir varios comportamentos ao mesmo tempo, kernel primeiro, depois as ondas de comportamento respeitando o DAG.
+Beyond validating, the core derives from there the parallelism waves by topological order: the adapter uses those waves to build several behaviors at the same time, kernel first, then the behavior waves respecting the DAG.
 
-Rode, leia o erro, corrija, repita. Quando `./bpt validate` passar limpo, o comportamento esta declarado de forma consistente e pronto para o adapter construir.
+Run it, read the error, fix it, repeat. When `./bpt validate` passes clean, the behavior is declared consistently and ready for the adapter to build.
 
-## Checklist final
+## Final checklist
 
-- [ ] id no formato `dominio.acao`, 2 a 3 segmentos.
-- [ ] scaffold rodado, pastas espelhadas e stubs criados.
-- [ ] `spec.md` preenchida (surfaces, cenarios por superficie, ui_bindings, status).
-- [ ] `contract.yaml` preenchido, ou `contract: none` se one-sided.
-- [ ] no registrado no `bpt.config.yaml` com `sides`, `deps` e, se compoe, `consumes`.
-- [ ] nenhum import de outro comportamento.
-- [ ] `./bpt validate` passa limpo.
+- [ ] id in the `domain.action` format, 2 to 3 segments.
+- [ ] scaffold run, mirrored folders and stubs created.
+- [ ] `spec.md` filled in (surfaces, scenarios per surface, ui_bindings, status).
+- [ ] `contract.yaml` filled in, or `contract: none` if one-sided.
+- [ ] node registered in `bpt.config.yaml` with `sides`, `deps` and, if it composes, `consumes`.
+- [ ] no import from another behavior.
+- [ ] `./bpt validate` passes clean.

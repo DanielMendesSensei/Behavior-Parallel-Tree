@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Hook scaffold do adapter placeholder.
+"""Scaffold hook of the placeholder adapter.
 
-Unico hook do placeholder que faz trabalho real: materializa as pastas espelhadas
-de um comportamento e os stubs de spec e contrato, por convencao, a partir da raiz
-do repo (diretorio atual). Nao conhece nenhuma stack e nao tem dependencias.
+The only placeholder hook that does real work: it materializes a behavior's
+mirrored folders and the spec and contract stubs, by convention, from the repo
+root (current directory). It knows no stack and has no dependencies.
 
-Requisicao (stdin, JSON):
-    {"node": {"id": "produto.criar",
+Request (stdin, JSON):
+    {"node": {"id": "product.create",
               "sides": ["backend", "frontend"],
-              "contract": "produto/criar" | "none"}}
+              "contract": "product/create" | "none"}}
 
-Resposta (stdout, JSON):
+Response (stdout, JSON):
     {"status": "ok", "hook": "scaffold", "id": ..., "created": [...]}
 """
 import json
@@ -66,14 +66,14 @@ consumes: []
 status: {{}}
 ---
 
-## Comportamento
-Descreva a acao visivel, a superficie e o resultado.
+## Behavior
+Describe the visible action, the surface, and the result.
 
-## Regras
+## Rules
 
-## Cenarios (dado / quando / entao, por superficie)
+## Scenarios (given / when / then, by surface)
 
-## Fora de escopo
+## Out of scope
 """
 
 
@@ -81,7 +81,7 @@ def main():
     try:
         req = json.load(sys.stdin)
     except Exception as e:
-        emit({"status": "error", "hook": "scaffold", "error": "json invalido: %s" % e})
+        emit({"status": "error", "hook": "scaffold", "error": "invalid json: %s" % e})
         return 1
 
     node = req.get("node", req)
@@ -91,7 +91,7 @@ def main():
 
     if not node_id or not sides:
         emit({"status": "error", "hook": "scaffold",
-              "error": "node.id e node.sides sao obrigatorios"})
+              "error": "node.id and node.sides are required"})
         return 1
 
     path = node_id.replace(".", "/")
@@ -106,7 +106,7 @@ def main():
             if touch(gk):
                 created.append(gk)
 
-    sys.stderr.write("[scaffold] comportamento %s em %s\n" % (node_id, ", ".join(sides)))
+    sys.stderr.write("[scaffold] behavior %s on %s\n" % (node_id, ", ".join(sides)))
 
     spec_path = os.path.join("packages", "contracts", path, "spec.md")
     if write_if_absent(spec_path, SPEC_STUB.format(id=node_id, contract=contract)):

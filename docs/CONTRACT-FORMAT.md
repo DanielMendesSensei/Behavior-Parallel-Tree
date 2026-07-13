@@ -1,175 +1,175 @@
-# Formato do Contrato Neutro
+# Neutral Contract Format
 
-O contrato e a junta do BPT. Ele e o unico ponto onde backend e frontend se encontram, e faz isso sem que um lado precise conhecer o codigo do outro. Um comportamento two-sided existe nos dois lados com a mesma identidade e a mesma spec; o que amarra os dois e este arquivo YAML neutro.
+The contract is BPT's joint. It is the single point where backend and frontend meet, and it does so without either side needing to know the other's code. A two-sided behavior exists on both sides with the same identity and the same spec; what binds the two is this neutral YAML file.
 
-A regra de ouro: o contrato descreve **o que** o comportamento aceita e devolve, nunca **como** um lado implementa. Nada de tipo de linguagem, nada de rota, nada de verbo HTTP.
+The golden rule: the contract describes **what** the behavior accepts and returns, never **how** a side implements it. No language type, no route, no HTTP verb.
 
-## Onde mora
+## Where it lives
 
-Um contrato por comportamento, no caminho canonico derivado do id (ponto vira barra):
-
-```
-packages/contracts/<caminho>/contract.yaml
-packages/contracts/<caminho>/spec.md
-```
-
-Exemplo para `produto.listar`:
+One contract per behavior, at the canonical path derived from the id (dot becomes slash):
 
 ```
-packages/contracts/produto/listar/contract.yaml
-packages/contracts/produto/listar/spec.md
+packages/contracts/<path>/contract.yaml
+packages/contracts/<path>/spec.md
 ```
 
-O contrato vive **fora** de `apps/backend` e `apps/frontend`, em `packages/contracts`. A spec fica ao lado do contrato, uma so, nunca duplicada por lado. A raiz de contratos e declarada no `bpt.config.yaml`:
+Example for `product.list`:
+
+```
+packages/contracts/product/list/contract.yaml
+packages/contracts/product/list/spec.md
+```
+
+The contract lives **outside** `apps/backend` and `apps/frontend`, in `packages/contracts`. The spec sits next to the contract, a single one, never duplicated per side. The contracts root is declared in `bpt.config.yaml`:
 
 ```yaml
 contracts:
   root: packages/contracts
 ```
 
-## Propriedade
+## Ownership
 
-Ninguem e dono do contrato no sentido de um lado poder muda-lo por conveniencia. As regras de propriedade:
+Nobody owns the contract in the sense that one side could change it for convenience. The ownership rules:
 
-- **Ninguem e dono unilateral.** O contrato existe fora dos apps justamente para nao pertencer a nenhum deles.
-- **Os apps leem, nunca escrevem fora de um PR de contrato.** Backend e frontend consomem o contrato como fonte da verdade. Alterar o contrato e uma mudanca deliberada, revisada em um PR proprio de contrato, nao um efeito colateral de mexer no codigo de um lado.
-- **Um lado nunca importa do outro.** Backend nao importa de frontend e vice-versa. Toda comunicacao entre lados passa pelo contrato.
-- **Em conflito, o contrato decide.** Se a implementacao de um lado diverge do contrato, quem esta errado e a implementacao. O contrato e o arbitro; o codigo se ajusta a ele, nunca o contrario dentro do mesmo PR.
+- **Nobody owns it unilaterally.** The contract lives outside the apps precisely so it belongs to none of them.
+- **The apps read, never write outside a contract PR.** Backend and frontend consume the contract as the source of truth. Changing the contract is a deliberate change, reviewed in its own contract PR, not a side effect of touching one side's code.
+- **One side never imports from the other.** Backend does not import from frontend and vice versa. All communication between sides goes through the contract.
+- **On conflict, the contract decides.** If a side's implementation diverges from the contract, the implementation is what is wrong. The contract is the arbiter; the code adjusts to it, never the other way around within the same PR.
 
-## Tipos neutros
+## Neutral types
 
-Os campos de `input` e `output` usam apenas tipos neutros, sem vinculo com stack:
+The `input` and `output` fields use only neutral types, with no tie to a stack:
 
-| Tipo | Significado |
-|------|-------------|
-| `text` | Texto livre. |
-| `integer` | Numero inteiro. |
-| `decimal` | Numero com casas decimais (nao monetario). |
-| `boolean` | Verdadeiro ou falso. |
-| `money` | Valor monetario (semantica de dinheiro, tratada com cuidado por cada lado). |
-| `list` | Colecao ordenada (`list of <tipo>`). |
-| `object` | Estrutura com campos nomeados. |
+| Type | Meaning |
+|------|---------|
+| `text` | Free text. |
+| `integer` | Whole number. |
+| `decimal` | Number with decimal places (not monetary). |
+| `boolean` | True or false. |
+| `money` | Monetary value (money semantics, handled with care by each side). |
+| `list` | Ordered collection (`list of <type>`). |
+| `object` | Structure with named fields. |
 
-### Por que nada de tipo de linguagem, rota ou verbo HTTP
+### Why no language type, route, or HTTP verb
 
-- **Tipo de linguagem** (`String`, `BigDecimal`, `Int32`, `Optional<T>`) amarraria o contrato a uma stack. O contrato precisa ser lido igualmente por qualquer adapter, em qualquer runtime.
-- **Rota** (`/produtos`, `/api/v2/...`) e detalhe de superficie. Uma rota mora na spec, no bloco `surfaces`, porque e o **como** o frontend ou o backend expoe o comportamento, nao o **que** ele faz.
-- **Verbo HTTP** (`GET`, `POST`) presume transporte HTTP. Um mesmo comportamento poderia ser exposto como endpoint, comando de CLI, job ou evento. O contrato usa `kind` (`query` ou `command`) para capturar a intencao de forma neutra, deixando o transporte a cargo do adapter.
+- **A language type** (`String`, `BigDecimal`, `Int32`, `Optional<T>`) would tie the contract to a stack. The contract must be read equally by any adapter, in any runtime.
+- **A route** (`/products`, `/api/v2/...`) is a surface detail. A route lives in the spec, in the `surfaces` block, because it is **how** the frontend or the backend exposes the behavior, not **what** it does.
+- **An HTTP verb** (`GET`, `POST`) assumes HTTP transport. The same behavior could be exposed as an endpoint, a CLI command, a job, or an event. The contract uses `kind` (`query` or `command`) to capture the intent neutrally, leaving the transport to the adapter.
 
-## Campos do contrato
+## Contract fields
 
-| Campo | Obrigatorio | Descricao |
-|-------|-------------|-----------|
-| `id` | sim | Identidade canonica `dominio.acao`. Igual nos dois lados. |
-| `version` | sim | Inteiro (ver Versionamento). |
-| `kind` | sim | `query` (le, nao muda estado) ou `command` (muda estado). |
-| `title` | sim | Titulo humano curto. |
-| `authorization` | sim | `required` (boolean) e `roles` (lista de papeis de dominio). |
-| `input` | sim | Campos de entrada, cada um com tipo neutro e restricoes (`min`, `max`, `default`, `opcional`). |
-| `output` | sim | Forma do resultado, com tipos neutros aninhados. |
-| `rules` | sim | Regras de negocio como dado (ver abaixo). |
-| `errors` | sim | Lista de erros possiveis. |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | yes | Canonical identity `domain.action`. Same on both sides. |
+| `version` | yes | Integer (see Versioning). |
+| `kind` | yes | `query` (reads, does not change state) or `command` (changes state). |
+| `title` | yes | Short human title. |
+| `authorization` | yes | `required` (boolean) and `roles` (list of domain roles). |
+| `input` | yes | Input fields, each with a neutral type and constraints (`min`, `max`, `default`, `optional`). |
+| `output` | yes | Shape of the result, with nested neutral types. |
+| `rules` | yes | Business rules as data (see below). |
+| `errors` | yes | List of possible errors. |
 
-### Erros
+### Errors
 
-Cada erro tem quatro atributos:
+Each error has four attributes:
 
-- `code`: identificador em portugues, caixa alta (`PARAMETRO_INVALIDO`, `NAO_AUTORIZADO`).
-- `category`: classe do erro (`validation`, `user`, e afins).
-- `retryable`: se vale a pena tentar de novo (`retryable` ou `nao-retryable`).
-- `when`: a condicao que dispara o erro (descrita na spec quando precisa de detalhe).
+- `code`: an uppercase identifier (`INVALID_PARAMETER`, `UNAUTHORIZED`).
+- `category`: the error class (`validation`, `user`, and the like).
+- `retryable`: whether it is worth trying again (`retryable` or `non-retryable`).
+- `when`: the condition that triggers the error (described in the spec when it needs detail).
 
-## Regra de negocio compartilhada como DADO
+## Shared business rules as DATA
 
-Nao existe pacote de dominio em codigo compartilhado. Uma regra que vale para os dois lados vive no bloco `rules` do contrato, como **dado**, com um id e uma descricao neutra:
+There is no shared domain package in code. A rule that holds for both sides lives in the contract's `rules` block, as **data**, with an id and a neutral description:
 
 ```yaml
 rules:
-  - ordenacao: itens por nome ascendente
-  - busca-case-insensitive: ignora caixa
+  - ordering: items by name ascending
+  - search-case-insensitive: ignores case
 ```
 
-Cada lado implementa a regra no seu codigo. A honestidade dos dois e garantida pelo teste de contrato bilateral (consumer-driven): o cenario mora na spec e roda em cada superficie no `verify`. A regra e uma so (o dado no contrato), mas tem duas implementacoes que precisam concordar.
+Each side implements the rule in its own code. The honesty of both is guaranteed by the bilateral, consumer-driven contract test: the scenario lives in the spec and runs on each surface during `verify`. The rule is single (the data in the contract), but it has two implementations that must agree.
 
-Regra compartilhada **nunca** vira codigo de kernel. Kernel e infra transversal; regra de negocio e dado no contrato.
+A shared rule **never** becomes kernel code. The kernel is cross-cutting infra; a business rule is data in the contract.
 
-## Versionamento enxuto no v1
+## Lean versioning in v1
 
-- `version` e um **inteiro**, nao semver.
-- Mudanca **aditiva** (novo campo opcional de input, novo campo de output, novo erro) **nao** sobe a version. Consumidores antigos continuam validos.
-- Mudanca que **quebra** (remover ou renomear campo, tornar obrigatorio o que era opcional, mudar tipo, mudar significado) **sobe** a version.
+- `version` is an **integer**, not semver.
+- An **additive** change (a new optional input field, a new output field, a new error) does **not** bump the version. Old consumers stay valid.
+- A **breaking** change (removing or renaming a field, making required what was optional, changing a type, changing meaning) **bumps** the version.
 
-Semver completo, convivencia N e N-1 e expand/contract ficam para o futuro. No v1 a distincao e binaria: aditivo mantem, quebra sobe.
+Full semver, N and N-1 coexistence, and expand/contract are for the future. In v1 the distinction is binary: additive holds, breaking bumps.
 
-## Deteccao de drift no v1
+## Drift detection in v1
 
-No v1, a deteccao de drift e simples e verificada pelo validador: o **trio de arquivos existe**.
+In v1, drift detection is simple and checked by the validator: the **file trio exists**.
 
-- `contract.yaml` presente.
-- `spec.md` presente ao lado.
-- Pasta do comportamento existe em cada lado declarado em `sides`.
+- `contract.yaml` present.
+- `spec.md` present next to it.
+- The behavior folder exists on each side declared in `sides`.
 
-Um no two-sided precisa de contrato; um no one-sided declara `contract: none`. Hash canonico, registro central e negociacao N/N-1 sao futuro, nao v1.
+A two-sided node needs a contract; a one-sided node declares `contract: none`. A canonical hash, a central registry, and N/N-1 negotiation are future work, not v1.
 
-## Idioma hibrido
+## Language convention
 
-- **Chaves estruturais de schema em ingles**: `id`, `version`, `kind`, `title`, `authorization`, `input`, `output`, `rules`, `errors`, `code`, `category`, `retryable`.
-- **Vocabulario de dominio e ids em portugues**: `produto.listar`, `busca`, `preco`, `disponivel`, `PARAMETRO_INVALIDO`, `NAO_AUTORIZADO`, papeis como `cliente`.
+- **Structural schema keys are fixed BPT vocabulary**: `id`, `version`, `kind`, `title`, `authorization`, `input`, `output`, `rules`, `errors`, `code`, `category`, `retryable`.
+- **Domain vocabulary and ids describe the product**: `product.list`, `search`, `price`, `available`, `INVALID_PARAMETER`, `UNAUTHORIZED`, roles like `customer`.
 
-A estrutura e universal; o dominio e do projeto.
+Everything is written in English. The structure is universal; the domain belongs to the project.
 
-## Exemplo real: produto.listar
+## Real example: product.list
 
-`packages/contracts/produto/listar/contract.yaml`:
+`packages/contracts/product/list/contract.yaml`:
 
 ```yaml
-id: produto.listar
+id: product.list
 version: 1
 kind: query
-title: Listar produtos
+title: List products
 
 authorization:
   required: true
-  roles: [cliente]
+  roles: [customer]
 
 input:
-  busca:
+  search:
     type: text
-    opcional: true
-  pagina:
+    optional: true
+  page:
     type: integer
     min: 1
     default: 1
-  tamanho:
+  size:
     type: integer
     min: 1
     max: 100
     default: 20
 
 output:
-  itens:
+  items:
     type: list
     of:
       type: object
       fields:
         id: text
-        nome: text
-        preco: money
-        disponivel: boolean
+        name: text
+        price: money
+        available: boolean
   total: integer
-  pagina: integer
+  page: integer
 
 rules:
-  - ordenacao: itens por nome ascendente
-  - busca-case-insensitive: ignora caixa
+  - ordering: items by name ascending
+  - search-case-insensitive: ignores case
 
 errors:
-  - code: PARAMETRO_INVALIDO
+  - code: INVALID_PARAMETER
     category: validation
-    retryable: nao-retryable
-  - code: NAO_AUTORIZADO
+    retryable: non-retryable
+  - code: UNAUTHORIZED
     category: user
-    retryable: nao-retryable
+    retryable: non-retryable
 ```
 
-Note o que **nao** esta aqui: nenhum tipo de linguagem, nenhuma rota `/produtos`, nenhum verbo HTTP. A rota e o tipo de superficie moram na spec, no bloco `surfaces`. O contrato so diz o que `produto.listar` aceita, o que devolve, quais regras valem para os dois lados e como pode falhar.
+Notice what is **not** here: no language type, no `/products` route, no HTTP verb. The route and the surface type live in the spec, in the `surfaces` block. The contract only says what `product.list` accepts, what it returns, which rules hold for both sides, and how it can fail.

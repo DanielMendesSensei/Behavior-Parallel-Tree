@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# CLI de referencia do Behavior Parallel Tree (BPT).
-# Isto e tooling de desenvolvimento, NAO a stack do app. Pode ser trocado.
+# Reference CLI for the Behavior Parallel Tree (BPT).
+# This is development tooling, NOT the app stack. It can be swapped out.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cmd="${1:-help}"
@@ -11,21 +11,21 @@ case "$cmd" in
     exec python3 "$HERE/tools/bpt/validate.py" "$@"
     ;;
   help|--help|-h|"")
-    echo "bpt: ferramenta de referencia do Behavior Parallel Tree"
+    echo "bpt: reference tool for the Behavior Parallel Tree"
     echo ""
-    echo "uso: ./bpt <comando>"
+    echo "usage: ./bpt <command>"
     echo ""
-    echo "comandos:"
-    echo "  validate   valida bpt.config.yaml e a arvore (7 invariantes)"
-    echo "  help       mostra esta ajuda"
+    echo "commands:"
+    echo "  validate   validate bpt.config.yaml and the tree (7 invariants)"
+    echo "  help       show this help"
     echo ""
-    echo "para materializar um comportamento novo, use o adapter (scaffold):"
-    echo "  echo '{\"node\":{\"id\":\"produto.criar\",\"sides\":[\"backend\",\"frontend\"]}}' \\"
+    echo "to materialize a new behavior, use the adapter (scaffold):"
+    echo "  echo '{\"node\":{\"id\":\"product.create\",\"sides\":[\"backend\",\"frontend\"]}}' \\"
     echo "    | adapters/placeholder/bin/bpt-adapter scaffold"
     ;;
   *)
-    echo "comando desconhecido: $cmd" >&2
-    echo "rode ./bpt help" >&2
+    echo "unknown command: $cmd" >&2
+    echo "run ./bpt help" >&2
     exit 2
     ;;
 esac

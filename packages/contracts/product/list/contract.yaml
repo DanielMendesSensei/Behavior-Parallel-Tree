@@ -1,0 +1,46 @@
+# Neutral contract for product.list (the joint between backend and frontend).
+# Pure data, neutral types. No language type, route, or HTTP verb.
+# Structural keys and domain vocabulary are both English.
+id: product.list
+version: 1                 # simple integer in v1 (semver/hash: future)
+kind: query                # query | command  (event/stream: future)
+title: List products
+
+authorization:
+  required: true
+  roles: [customer]
+
+input:
+  search: { type: text, required: false }
+  page:   { type: integer, min: 1, default: 1 }
+  size:   { type: integer, min: 1, max: 100, default: 20 }
+
+output:
+  items:
+    type: list
+    of:
+      object:
+        id:        { type: text }
+        name:      { type: text }
+        price:     { type: money }
+        available: { type: boolean }
+  total: { type: integer }
+  page:  { type: integer }
+
+# Shared business rules live here as DATA. Each side implements them
+# from here; the bilateral contract test keeps both sides honest.
+rules:
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation   # user | validation | system
+    retryable: false
+    when: page or size out of range
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing or expired

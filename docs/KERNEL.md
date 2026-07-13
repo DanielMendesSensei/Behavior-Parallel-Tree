@@ -1,138 +1,138 @@
 # KERNEL
 
-O kernel e a infra transversal que vive **fora da arvore de comportamentos**. Ha um kernel por lado (`apps/backend/kernel`, `apps/frontend/kernel`), declarado em `bpt.config.yaml`. Comportamento e ilha isolada; o kernel e o chao comum embaixo de todas as ilhas.
+The kernel is the cross-cutting infrastructure that lives **outside the behavior tree**. There is one kernel per side (`apps/backend/kernel`, `apps/frontend/kernel`), declared in `bpt.config.yaml`. A behavior is an isolated island; the kernel is the common ground beneath all the islands.
 
-O objetivo do BPT e minimizar o contexto necessario para fazer uma mudanca. O kernel serve a esse objetivo quando concentra o que e genuinamente compartilhado. Ele **trai** esse objetivo quando vira deposito de conveniencias: cada coisa que sobe ao kernel sem merecer aumenta o contexto de todo mundo. Por isso o kernel e pequeno por design e a barra de entrada e alta.
+The goal of BPT is to minimize the context needed to make a change. The kernel serves that goal when it concentrates what is genuinely shared. It **betrays** that goal when it becomes a dumping ground of conveniences: every thing that rises to the kernel without deserving it increases everyone's context. That is why the kernel is small by design and the bar for entry is high.
 
-## A regra de direcao (absoluta)
+## The direction rule (absolute)
 
-Existe uma unica direcao permitida:
+There is a single permitted direction:
 
-> **Comportamento importa do kernel. O kernel NUNCA importa de comportamento.**
+> **A behavior imports from the kernel. The kernel NEVER imports from a behavior.**
 
-O kernel nao conhece nenhum comportamento pelo nome. Se voce precisa citar `produto.listar` dentro do kernel, aquilo nao e kernel: e comportamento vazado para o lugar errado. Essa regra e o que mantem cada comportamento uma ilha: mexer em `produto.detalhar` nunca pode reagir de volta pelo kernel e afetar `produto.listar`.
+The kernel knows no behavior by name. If you need to cite `product.list` inside the kernel, that thing is not kernel: it is a behavior leaked into the wrong place. This rule is what keeps each behavior an island: touching `product.detail` can never react back through the kernel and affect `product.list`.
 
-O kernel se descreve sem citar dominio. `auth`, `db`, `config`, `app-shell`, `design-system`: nenhum desses precisa saber o que e um produto.
+The kernel describes itself without citing a domain. `auth`, `db`, `config`, `app-shell`, `design-system`: none of them needs to know what a product is.
 
-## O que pertence ao kernel
+## What belongs in the kernel
 
-Infra transversal, usada por muitos comportamentos, sem sabor de dominio:
+Cross-cutting infrastructure, used by many behaviors, with no domain flavor:
 
-- **auth**: quem e o usuario, sessao, verificacao de papel (o *mecanismo*, nao a politica de qual papel acessa o que; a politica mora no `authorization` do contrato).
-- **db**: conexao, pool, transacao, cliente do banco, runner de migracao (o *encanamento*, nao as tabelas de negocio).
-- **config**: leitura de ambiente, flags, segredos, bootstrap.
-- **app-shell** (frontend): roteador raiz, layout de moldura, providers globais, tratamento de erro de topo.
-- **design-system** (frontend): tokens, componentes primitivos (botao, input, tabela), tema. Sem tela de dominio.
+- **auth**: who the user is, session, role check (the *mechanism*, not the policy of which role accesses what; the policy lives in the contract's `authorization`).
+- **db**: connection, pool, transaction, database client, migration runner (the *plumbing*, not the business tables).
+- **config**: environment reading, flags, secrets, bootstrap.
+- **app-shell** (frontend): root router, frame layout, global providers, top-level error handling.
+- **design-system** (frontend): tokens, primitive components (button, input, table), theme. No domain screen.
 
-Sinal de que pertence: descreve-se sem nomear comportamento, e transversal, e usado por 2 ou mais comportamentos hoje.
+A sign that it belongs: it describes itself without naming a behavior, it is cross-cutting, and it is used by 2 or more behaviors today.
 
-## O que NAO pertence ao kernel
+## What does NOT belong in the kernel
 
-- **Regra de UM comportamento**: se so `produto.listar` usa, mora em `produto.listar`. Nunca sobe "por precaucao".
-- **Tipos do contrato**: o tipo neutro vive no `contract.yaml`; a materializacao vive no `__generated__/` do no (via `codegen`). Nao ha tipos de dominio compartilhados no kernel.
-- **Uma tela so**: uma tela especifica e um comportamento no frontend, nao design-system. O design-system entrega o botao; a tela de checkout usa o botao.
-- **Regra de negocio compartilhada**: vira **dado** no bloco `rules` do contrato, nunca codigo de kernel (secao proprio abaixo).
-- **helpers / utils / misc / shared**: pastas guarda-chuva sao proibidas. Ver anti-inchaco.
+- **A rule for ONE behavior**: if only `product.list` uses it, it lives in `product.list`. It never rises "just in case".
+- **Contract types**: the neutral type lives in `contract.yaml`; the materialization lives in the node's `__generated__/` (via `codegen`). There are no shared domain types in the kernel.
+- **A single screen**: a specific screen is a behavior on the frontend, not design-system. The design-system delivers the button; the checkout screen uses the button.
+- **A shared business rule**: it becomes **data** in the contract's `rules` block, never kernel code (its own section below).
+- **helpers / utils / misc / shared**: umbrella folders are forbidden. See anti-bloat.
 
-## Promocao ao kernel: as 3 perguntas
+## Promotion to the kernel: the 3 questions
 
-Uma coisa so sobe ao kernel se a resposta e **sim** para as tres:
+A thing only rises to the kernel if the answer is **yes** to all three:
 
-1. **Ja e usado por 2 ou mais comportamentos hoje?** (uso real, nao futuro imaginado)
-2. **E transversal?** (nao pertence a nenhum dominio em particular)
-3. **Descreve-se sem citar o nome de nenhum comportamento?**
+1. **Is it already used by 2 or more behaviors today?** (real usage, not an imagined future)
+2. **Is it cross-cutting?** (it does not belong to any domain in particular)
+3. **Does it describe itself without citing the name of any behavior?**
 
-Qualquer "nao" reprova. "Vai que alguem precisa depois" nao conta como sim na pergunta 1.
+Any "no" rejects it. "In case someone needs it later" does not count as a yes on question 1.
 
-## A regra do tres (graduacao)
+## The rule of three (graduation)
 
-A promocao acontece na terceira ocorrencia, nao antes:
+Promotion happens on the third occurrence, not before:
 
-1. **1a vez**: nasce dentro do comportamento que precisa. Fica la.
-2. **2a vez**: outro comportamento precisa do mesmo. **Copie.** Duplicacao e barata; abstracao errada e cara.
-3. **3a vez**: um terceiro precisa. Agora sobe ao kernel, e os dois anteriores passam a importar de la.
+1. **1st time**: it is born inside the behavior that needs it. It stays there.
+2. **2nd time**: another behavior needs the same thing. **Copy it.** Duplication is cheap; the wrong abstraction is expensive.
+3. **3rd time**: a third one needs it. Now it rises to the kernel, and the two earlier ones start importing from there.
 
-Copiar na 2a ocorrencia e intencional: e o tempo que voce ganha para ver se as tres copias sao mesmo a mesma coisa ou tres coisas parecidas que vao divergir. Se divergiram, nunca eram kernel.
+Copying on the 2nd occurrence is intentional: it is the time you buy to see whether the three copies are really the same thing or three similar things that will diverge. If they diverged, they were never kernel.
 
-## Anti-inchaco
+## Anti-bloat
 
-O kernel morre de sucesso: quanto mais util, mais gente quer colar coisa nele. Contramedidas:
+The kernel dies of success: the more useful it is, the more people want to glue things onto it. Countermeasures:
 
-- **Dono por submodulo**: cada submodulo do kernel (`auth`, `db`, ...) tem um responsavel. Nada entra sem passar pelo dono do submodulo. Isso impede a terra-de-ninguem.
-- **Proibido `helpers`, `utils`, `misc`, `shared`**: toda pasta do kernel nomeia uma capacidade transversal concreta. Se voce nao consegue nomear a capacidade, nao e kernel.
-- **Mede fan-in**: para cada modulo do kernel, conte quantos comportamentos importam dele (fan-in). Fan-in e a metrica de saude: alto justifica a existencia, baixo e suspeito.
-- **Democao**: quando o fan-in de um modulo volta a **1 consumidor**, ele desce de volta para dentro daquele comportamento. Kernel com um consumidor so nao e kernel.
-- **Teto**: existe um teto de tamanho por submodulo. Estourar o teto **dispara revisao** obrigatoria (nao um bloqueio automatico, mas um portao humano).
-- **Onda de kernel serializada**: mudanca no kernel roda em uma **onda propria, antes** de todas as ondas de comportamento, e vem com **CHANGELOG**. Como o kernel e a base de todo mundo, ele nunca muda em paralelo com quem depende dele; muda primeiro, sozinho, e anuncia a mudanca.
+- **Owner per submodule**: each kernel submodule (`auth`, `db`, ...) has an owner. Nothing enters without passing through the submodule owner. This prevents no-man's-land.
+- **`helpers`, `utils`, `misc`, `shared` forbidden**: every kernel folder names a concrete cross-cutting capability. If you cannot name the capability, it is not kernel.
+- **Measure fan-in**: for each kernel module, count how many behaviors import from it (fan-in). Fan-in is the health metric: high justifies its existence, low is suspicious.
+- **Demotion**: when a module's fan-in returns to **1 consumer**, it goes back down inside that behavior. A kernel with a single consumer is not kernel.
+- **Ceiling**: there is a size ceiling per submodule. Blowing the ceiling **triggers** a mandatory review (not an automatic block, but a human gate).
+- **Serialized kernel wave**: a change in the kernel runs in **its own wave, before** all the behavior waves, and comes with a **CHANGELOG**. Since the kernel is everyone's base, it never changes in parallel with those who depend on it; it changes first, alone, and announces the change.
 
-## Regra de negocio compartilhada NAO vira codigo de kernel
+## A shared business rule does NOT become kernel code
 
-Regra de negocio que os dois lados precisam respeitar (ordenacao, arredondamento de preco, case-insensitive de busca) e o exemplo classico de coisa que "parece" kernel. Nao e.
+A business rule that both sides must respect (ordering, price rounding, case-insensitive search) is the classic example of a thing that "looks like" kernel. It is not.
 
-Ela vai como **dado**, no bloco `rules` do contrato:
+It goes as **data**, in the contract's `rules` block:
 
 ```yaml
 rules:
-  - ordenacao: itens por nome ascendente
-  - busca-case-insensitive: ignora caixa
+  - ordering: items by name ascending
+  - search-case-insensitive: ignores case
 ```
 
-**Cada lado implementa a regra na sua stack.** Um **teste de contrato bilateral** (consumer-driven) mantem os dois honestos: se o backend ordena e o frontend nao, o teste bilateral reprova.
+**Each side implements the rule in its own stack.** A **bilateral contract test** (consumer-driven) keeps both honest: if the backend orders and the frontend does not, the bilateral test fails.
 
-Por que dado e nao codigo compartilhado:
+Why data and not shared code:
 
-- Codigo compartilhado de dominio criaria uma dependencia que atravessa os dois lados e fura o espelho. O contrato neutro e justamente a **unica** junta entre backend e frontend.
-- A regra fica legivel por qualquer agente sem carregar codigo de outra stack: o contexto continua minimo.
-- O nucleo e agnostico de linguagem e runtime; regra como dado sobrevive a isso, codigo nao.
+- Shared domain code would create a dependency crossing both sides and pierce the mirror. The neutral contract is precisely the **only** joint between backend and frontend.
+- The rule stays readable by any agent without loading code from another stack: the context stays minimal.
+- The core is language- and runtime-agnostic; a rule as data survives that, code does not.
 
-**Quando a regra e complexa demais para caber como dado?** Ela deixa de ser "uma regra" e vira **um comportamento**: crie um no dedicado (ex.: `preco.calcular`) com seu proprio contrato, e os outros nos o consomem via `consumes`. A complexidade ganha uma ilha propria, testes de cenario proprios e uma identidade nas duas arvores. O que voce **nao** faz e esconde-la num modulo de kernel: isso reintroduziria a dependencia de dominio que o BPT existe para eliminar.
+**When is the rule too complex to fit as data?** It stops being "a rule" and becomes **a behavior**: create a dedicated node (e.g.: `price.calculate`) with its own contract, and the other nodes consume it via `consumes`. The complexity gets its own island, its own scenario tests, and an identity in both trees. What you do **not** do is hide it in a kernel module: that would reintroduce the domain dependency that BPT exists to eliminate.
 
-## Dados e migracoes
+## Data and migrations
 
-- **Cada comportamento e dono das suas tabelas.** A migracao mora junto do comportamento, dentro da pasta do no.
-- O kernel entrega o **encanamento** de banco (conexao, transacao, runner de migracao), nunca tabela de negocio.
-- **Tabela tocada por 2 ou mais comportamentos = acoplamento global explicito.** Isso nao e proibido, mas e um evento revisado: precisa ser declarado e passar por revisao, porque quebra o isolamento das ilhas. O padrao e cada tabela ter um dono unico.
+- **Each behavior owns its own tables.** The migration lives together with the behavior, inside the node's folder.
+- The kernel delivers the database **plumbing** (connection, transaction, migration runner), never a business table.
+- **A table touched by 2 or more behaviors = explicit global coupling.** This is not forbidden, but it is a reviewed event: it needs to be declared and go through review, because it breaks the isolation of the islands. The default is for each table to have a single owner.
 
-## Enforcement no `verify` do adapter
+## Enforcement in the adapter's `verify`
 
-O hook `verify` do adapter checa a direcao de import e reprova o build se o grafo violar a regra. Arestas:
+The adapter's `verify` hook checks the import direction and fails the build if the graph violates the rule. Edges:
 
-**Permitidas:**
+**Permitted:**
 
-| De | Para |
+| From | To |
 | --- | --- |
 | `behaviors/*` | `kernel` |
 | `behaviors/*` | `contracts` |
 | `kernel` | `kernel` |
 | `kernel` | `contracts` |
 
-**Proibidas:**
+**Forbidden:**
 
-| De | Para | Por que |
+| From | To | Why |
 | --- | --- | --- |
-| `kernel` | `behaviors/*` | fura a direcao absoluta |
-| `behaviors/a` | `behaviors/b` | comportamento nao importa comportamento; a junta e o contrato |
+| `kernel` | `behaviors/*` | pierces the absolute direction |
+| `behaviors/a` | `behaviors/b` | a behavior does not import a behavior; the joint is the contract |
 
-Comportamento fala com outro comportamento **so** pelo contrato (`consumes`), nunca por import direto de codigo.
+A behavior talks to another behavior **only** through the contract (`consumes`), never by direct import of code.
 
-O validador estatico reforca isso de outro angulo: o dominio `kernel` e **reservado** (invariante 6 do `./bpt validate`), entao nenhum `id` de no pode nascer sob a pasta de kernel.
+The static validator reinforces this from another angle: the `kernel` domain is **reserved** (invariant 6 of `./bpt validate`), so no node `id` can be born under the kernel folder.
 
-## DO vs NAO
+## DO vs DON'T
 
-**1. Cliente HTTP generico**
-DO: `kernel/http` com o cliente base, retry, timeout. NAO: `kernel/produto-api` que sabe montar a chamada de listar produto (isso e do comportamento `produto.listar`).
+**1. Generic HTTP client**
+DO: `kernel/http` with the base client, retry, timeout. DON'T: `kernel/product-api` that knows how to assemble the list product call (that belongs to the `product.list` behavior).
 
-**2. Componente de tabela**
-DO: `design-system/table` (colunas genericas, ordenacao visual). NAO: `design-system/tabela-de-produtos` com colunas `nome, preco, disponivel` (isso e a tela de `produto.listar`).
+**2. Table component**
+DO: `design-system/table` (generic columns, visual sorting). DON'T: `design-system/product-table` with columns `name, price, available` (that is the `product.list` screen).
 
-**3. Regra de ordenacao**
-DO: `rules: [ordenacao: itens por nome ascendente]` no contrato, cada lado implementa, teste bilateral guarda. NAO: `kernel/ordenador` com a logica de ordenar produtos.
+**3. Ordering rule**
+DO: `rules: [ordering: items by name ascending]` in the contract, each side implements it, the bilateral test guards it. DON'T: `kernel/sorter` with the logic for ordering products.
 
-**4. Verificacao de papel**
-DO: `kernel/auth` que responde "qual papel tem esse usuario". NAO: `kernel/auth` decidindo que "cliente pode listar produtos" (essa politica mora em `authorization.roles` do contrato).
+**4. Role check**
+DO: `kernel/auth` that answers "which role this user has". DON'T: `kernel/auth` deciding that "a customer can list products" (that policy lives in the contract's `authorization.roles`).
 
-**5. Tabela de dados**
-DO: migracao de `produtos` dentro de `apps/backend/behaviors/produto/listar/`, dono unico. NAO: migracao de `produtos` em `kernel/db/migrations` como se fosse infra.
+**5. Data table**
+DO: migration of `products` inside `apps/backend/behaviors/product/list/`, single owner. DON'T: migration of `products` in `kernel/db/migrations` as if it were infrastructure.
 
-**6. Regra complexa demais para dado**
-DO: promover o calculo a um no proprio `preco.calcular` com contrato, consumido via `consumes`. NAO: `kernel/precificacao` com a arvore de descontos e impostos.
+**6. A rule too complex for data**
+DO: promote the calculation to its own node `price.calculate` with a contract, consumed via `consumes`. DON'T: `kernel/pricing` with the tree of discounts and taxes.

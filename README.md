@@ -1,72 +1,72 @@
 # BPT: Behavior Parallel Tree
 
-O BPT sao duas arvores espelhadas de comportamentos, onde cada comportamento e uma ilha isolada que um agente constroi em paralelo, porque a arvore declara nos, dependencias e o contrato neutro que liga backend e frontend, com um unico objetivo: minimizar o contexto necessario para fazer uma mudanca.
+BPT is two mirrored trees of behaviors, where each behavior is an isolated island that an agent builds in parallel, because the tree declares nodes, dependencies, and the neutral contract that links backend and frontend, with a single goal: to minimize the context needed to make a change.
 
-Este repositorio e um template. A ideia e clona-lo a cada projeto novo, apagar os dois nos de exemplo e comecar a declarar os seus comportamentos. O nucleo e agnostico de stack: nao conhece linguagem, framework nem runtime. Quem executa o trabalho de verdade e um adapter, escolhido por projeto.
+This repository is a template. The idea is to clone it for each new project, delete the two example nodes, and start declaring your own behaviors. The core is stack-agnostic: it knows nothing about language, framework, or runtime. The one that does the real work is an adapter, chosen per project.
 
 ## Clone and go
 
-Pre-requisitos: apenas Python 3 com PyYAML, e so para o validador de tooling. Isso nao e a stack do seu app: e a ferramenta que confere se a arvore esta coerente.
+Prerequisites: just Python 3 with PyYAML, and only for the tooling validator. This is not your app's stack: it is the tool that checks whether the tree is coherent.
 
 ```bash
 pip install pyyaml
 ./bpt validate
 ```
 
-Saida esperada: o validador deriva as ondas de paralelismo (a ordem topologica que o adapter vai percorrer) e confirma as 7 invariantes.
+Expected output: the validator derives the parallelism waves (the topological order the adapter will walk through) and confirms the 7 invariants.
 
 ```
-bpt validate: /caminho/do/projeto
-ondas de paralelismo (o adapter percorre nesta ordem):
-  onda 1: produto.listar
-  onda 2: produto.detalhar
+bpt validate: /path/to/project
+parallelism waves (the adapter walks in this order):
+  wave 1: product.list
+  wave 2: product.detail
 
-ok: bpt.config.yaml e a arvore passaram nas 7 invariantes (0 aviso(s))
+ok: bpt.config.yaml and the tree passed the 7 invariants (0 warning(s))
 ```
 
-## Arvore de pastas
+## Folder tree
 
 ```
-bpt.config.yaml              declaracao unica: sides, contratos e nos
-bpt                          atalho para ./bpt validate
+bpt.config.yaml              single declaration: sides, contracts, and nodes
+bpt                          shortcut for ./bpt validate
 apps/
   backend/
-    behaviors/               os nos do lado backend (raiz declarada em sides)
-    kernel/                  infra transversal do backend (auth, db, config, app-shell)
+    behaviors/               the backend-side nodes (root declared in sides)
+    kernel/                  cross-cutting backend infra (auth, db, config, app-shell)
   frontend/
-    behaviors/               os nos do lado frontend
-    kernel/                  infra transversal do frontend (+ design-system)
+    behaviors/               the frontend-side nodes
+    kernel/                  cross-cutting frontend infra (+ design-system)
 packages/
-  contracts/                 um contrato + uma spec por comportamento
+  contracts/                 one contract + one spec per behavior
 adapters/
-  placeholder/               adapter de exemplo (so faz scaffold de verdade)
+  placeholder/               example adapter (only does real scaffolding)
 tools/
-  bpt/validate.py            o validador (tooling swappable, nao a stack do app)
-docs/                        o rulebook e o guia de contribuicao
+  bpt/validate.py            the validator (swappable tooling, not the app's stack)
+docs/                        the rulebook and the contributing guide
 ```
 
-Dentro de cada no ha `src/` (codigo humano) e `__generated__/` (codigo materializado pelo adapter a partir do contrato). Nao existe arquivo de metadado por no: a pasta na convencao mais a entrada no `bpt.config.yaml` ja sao a declaracao.
+Inside each node there is `src/` (human code) and `__generated__/` (code materialized by the adapter from the contract). There is no per-node metadata file: the conventional folder plus the entry in `bpt.config.yaml` are already the declaration.
 
-## O exemplo
+## The example
 
-O template nasce com 2 nos reais, os dois espelhados em backend e frontend:
+The template ships with 2 real nodes, both mirrored in backend and frontend:
 
-- `produto.listar`: sem dependencias. Contrato em `packages/contracts/produto/listar/contract.yaml`, spec em `packages/contracts/produto/listar/spec.md`.
-- `produto.detalhar`: depende de `produto.listar` (por isso cai na onda 2). Contrato e spec em `packages/contracts/produto/detalhar/`.
+- `product.list`: no dependencies. Contract in `packages/contracts/product/list/contract.yaml`, spec in `packages/contracts/product/list/spec.md`.
+- `product.detail`: depends on `product.list` (which is why it falls into wave 2). Contract and spec in `packages/contracts/product/detail/`.
 
-O codigo de cada no vive em `apps/backend/behaviors/produto/<acao>/` e `apps/frontend/behaviors/produto/<acao>/`. A spec fica ao lado do contrato, uma so, nunca duplicada por lado.
+Each node's code lives in `apps/backend/behaviors/product/<action>/` and `apps/frontend/behaviors/product/<action>/`. The spec sits next to the contract, a single one, never duplicated per side.
 
 ## Docs
 
-- `docs/RULEBOOK.md`: o rulebook agnostico. Topologia espelhada, formas canonicas de id e caminho, contrato neutro, kernel, testes e exemplos avancados.
-- `docs/CONTRIBUTING.md`: como adicionar um comportamento passo a passo.
+- `docs/RULEBOOK.md`: the stack-agnostic rulebook. Mirrored topology, canonical forms for id and path, neutral contract, kernel, tests, and advanced examples.
+- `docs/CONTRIBUTING.md`: how to add a behavior step by step.
 
-## Como adicionar um comportamento
+## How to add a behavior
 
-Em resumo: escolha o id no formato `dominio.acao`, crie a pasta do contrato mais a spec, declare o no em `bpt.config.yaml` (com `sides` e `deps`), rode `./bpt validate` e deixe o adapter construir. O passo a passo completo esta em `docs/CONTRIBUTING.md`.
+In short: choose the id in the `domain.action` format, create the contract folder plus the spec, declare the node in `bpt.config.yaml` (with `sides` and `deps`), run `./bpt validate`, and let the adapter build. The complete step by step is in `docs/CONTRIBUTING.md`.
 
-## Sobre o adapter
+## About the adapter
 
-O nucleo declara (arvore, espelho, contrato, spec); o adapter executa (worktrees, paralelismo, loop). O adapter incluido aqui e um placeholder: ele so faz o scaffold de verdade (cria as pastas espelhadas e os stubs a partir da spec). Os demais hooks retornam status ok vazio.
+The core declares (tree, mirror, contract, spec); the adapter executes (worktrees, parallelism, loop). The adapter included here is a placeholder: it only does real scaffolding (creates the mirrored folders and the stubs from the spec). The remaining hooks return an empty ok status.
 
-Um adapter real, escrito para a sua stack, e que vai rodar `plan`, `execute`, `verify`, `review` e `codegen`: planejar, implementar so nas pastas do no, rodar os cenarios da superficie e checar a direcao dos imports, revisar e materializar o contrato neutro em tipos e validadores da stack.
+A real adapter, written for your stack, is what will run `plan`, `execute`, `verify`, `review`, and `codegen`: plan, implement only in the node's folders, run the surface scenarios and check the import direction, review, and materialize the neutral contract into the stack's types and validators.

@@ -1,106 +1,106 @@
-# Testes e Verificacao no BPT
+# Tests and Verification in BPT
 
-O BPT tem um objetivo unico: minimizar o contexto necessario para fazer uma mudanca. O modelo de testes serve a esse objetivo. Cada tipo de teste tem um lugar fixo, uma responsabilidade estreita e uma regra clara sobre se ele sobrevive ou nao a um refactor. Quando isso e respeitado, um agente consegue trabalhar um comportamento como ilha isolada sem carregar o resto do sistema na cabeca.
+BPT has a single goal: to minimize the context needed to make a change. The test model serves that goal. Each type of test has a fixed place, a narrow responsibility, and a clear rule about whether or not it survives a refactor. When that is respected, an agent can work a behavior as an isolated island without carrying the rest of the system in their head.
 
-Este documento descreve as tres camadas de teste, como o cenario e projetado por superficie, como o `verify` do adapter consome os cenarios da spec, o teste de contrato bilateral, as auditorias opcionais (property e mutation) e a revisao semantica como portao final.
+This document describes the three test layers, how the scenario is projected per surface, how the adapter's `verify` consumes the spec scenarios, the bilateral contract test, the optional audits (property and mutation), and semantic review as the final gate.
 
-## As tres camadas
+## The three layers
 
-Sao tres camadas com papeis distintos. A regra que separa uma da outra e simples: o cenario testa o **que** (comportamento observavel), o unitario testa o **como** (internals), o fluxo testa a **jornada** (varios comportamentos juntos).
+There are three layers with distinct roles. The rule that separates one from another is simple: the scenario tests the **what** (observable behavior), the unit tests the **how** (internals), the flow tests the **journey** (several behaviors together).
 
-| Camada | O que testa | Onde mora | Sobrevive a refactor? |
+| Layer | What it tests | Where it lives | Survives a refactor? |
 | --- | --- | --- | --- |
-| Cenario | Comportamento observavel: o contrato e a superficie. Nunca cita nome de funcao, classe ou tabela. | `packages/contracts/<caminho>/spec.md`, na secao Cenarios | Sim. So muda quando o comportamento observavel muda. |
-| Unitario | Internals: o como. Logica interna, ramos, casos de borda de uma unidade de codigo. | Ao lado do codigo, dentro de `src/` do no | Nao. E descartavel: muda junto com o codigo que ele cobre. |
-| Fluxo / e2e | Jornada que atravessa N comportamentos, ancorada num PRD. | `packages/contracts/_flows/<prd>/` | Parcial. Sobrevive a refactor interno; muda quando a jornada de negocio muda. |
+| Scenario | Observable behavior: the contract and the surface. Never cites a function, class, or table name. | `packages/contracts/<path>/spec.md`, in the Scenarios section | Yes. It only changes when the observable behavior changes. |
+| Unit | Internals: the how. Internal logic, branches, edge cases of a code unit. | Next to the code, inside the node's `src/` | No. It is disposable: it changes along with the code it covers. |
+| Flow / e2e | A journey that crosses N behaviors, anchored to a PRD. | `packages/contracts/_flows/<prd>/` | Partial. It survives an internal refactor; it changes when the business journey changes. |
 
-A intuicao por tras da coluna "sobrevive a refactor": o cenario e o unitario existem em niveis de estabilidade diferentes de proposito. O cenario e um contrato com o mundo e deve durar; o unitario e um andaime que voce joga fora quando reescreve a unidade. Se um refactor interno quebra um cenario, o cenario estava olhando para o lugar errado (para o como, nao para o que).
+The intuition behind the "survives a refactor" column: the scenario and the unit exist at different levels of stability on purpose. The scenario is a contract with the world and must last; the unit is scaffolding you throw away when you rewrite the unit. If an internal refactor breaks a scenario, the scenario was looking at the wrong place (at the how, not the what).
 
-## Cenario: so contrato e superficie
+## Scenario: only contract and surface
 
-O cenario e a camada central do BPT porque e a unica que mora na fronteira do comportamento, e nao dentro dele. Ele fala de duas coisas, e apenas essas duas:
+The scenario is the central layer of BPT because it is the only one that lives on the behavior's boundary, not inside it. It speaks of two things, and only those two:
 
-- O **contrato** (`contract.yaml`): input, output, `rules`, `errors`, autorizacao.
-- A **superficie** (declarada na spec: tela, endpoint, comando-cli, job, evento).
+- The **contract** (`contract.yaml`): input, output, `rules`, `errors`, authorization.
+- The **surface** (declared in the spec: screen, endpoint, cli-command, job, event).
 
-Um cenario nunca menciona o nome de uma funcao, de um metodo, de uma tabela ou de um componente. Se ele precisar desses nomes para ser escrito, ele virou um teste unitario disfarcado. O texto de um cenario deve continuar valido mesmo que toda a implementacao interna do no seja reescrita do zero em outra stack.
+A scenario never mentions the name of a function, a method, a table, or a component. If it needs those names to be written, it has become a disguised unit test. The text of a scenario must remain valid even if the node's entire internal implementation is rewritten from scratch in another stack.
 
-Os cenarios moram na secao **Cenarios** da `spec.md`, escritos em dado / quando / entao. Cada cenario marca a que ele pertence:
+The scenarios live in the **Scenarios** section of the `spec.md`, written in given / when / then. Each scenario marks which one it belongs to:
 
-- `[contrato]`: verificavel na fronteira de dados, independente de superficie visual. E o que o backend roda.
-- `[tela]` (ou a superficie equivalente): verificavel na superficie concreta. E o que o frontend roda.
+- `[contract]`: verifiable at the data boundary, independent of visual surface. This is what the backend runs.
+- `[screen]` (or the equivalent surface): verifiable on the concrete surface. This is what the frontend runs.
 
-### O "entao" e projetado por superficie
+### The "then" is projected per surface
 
-Um mesmo cenario tem um so "dado" e um so "quando", mas o "entao" e **projetado por superficie**. O comportamento observavel e um; a forma de observa-lo depende de onde voce olha.
+A single scenario has one "given" and one "when", but the "then" is **projected per surface**. The observable behavior is one; the way to observe it depends on where you look.
 
-Exemplo, para `produto.listar` com a regra `ordenacao: itens por nome ascendente`:
+Example, for `product.list` with the rule `ordering: items by name ascending`:
 
-- Projecao `[contrato]` (verify do backend): o `entao` afirma sobre o `output` do contrato. "Entao a lista `itens` vem ordenada por `nome` ascendente e `total` reflete a contagem." Roda contra a resposta de dados, sem tela.
-- Projecao `[tela]` (verify do frontend): o `entao` afirma sobre a superficie. "Entao a tela de produtos mostra os itens na ordem de nome ascendente." Roda contra a superficie renderizada.
+- `[contract]` projection (backend verify): the `then` asserts about the contract's `output`. "Then the `items` list comes ordered by `name` ascending and `total` reflects the count." Runs against the data response, no screen.
+- `[screen]` projection (frontend verify): the `then` asserts about the surface. "Then the products screen shows the items in name-ascending order." Runs against the rendered surface.
 
-O `verify` do backend executa as projecoes `[contrato]`; o `verify` do frontend executa as projecoes `[tela]`. Cada lado prova a mesma verdade na sua propria linguagem. Isso e o que permite espelhar o comportamento nos dois lados sem duplicar a spec: a spec e uma so, as projecoes e que se separam.
+The backend `verify` runs the `[contract]` projections; the frontend `verify` runs the `[screen]` projections. Each side proves the same truth in its own language. This is what allows mirroring the behavior on both sides without duplicating the spec: the spec is single, and only the projections split apart.
 
-### Binding de UI: verify de frontend deterministico
+### UI binding: deterministic frontend verify
 
-Um cenario `[tela]` nao pode depender de texto visivel ou de estrutura de layout, senao ele quebra a cada ajuste de copy ou de CSS, e volta a nao sobreviver a refactor. Para manter o `verify` de frontend deterministico, a spec declara `ui_bindings`: um mapa neutro de **superficie para handle estavel**.
+A `[screen]` scenario cannot depend on visible text or on layout structure, otherwise it breaks with every copy or CSS adjustment, and it goes back to not surviving a refactor. To keep the frontend `verify` deterministic, the spec declares `ui_bindings`: a neutral map of **surface to stable handle**.
 
-O handle e um identificador estavel (por exemplo um test id) que o cenario referencia por nome logico. O adapter, no `codegen` ou no `execute`, materializa esse handle na superficie concreta da stack. O cenario diz "o handle `lista-produtos` contem os itens ordenados"; ele nao diz "o `<ul class=...>` contem". Assim o texto do cenario permanece estavel e o `verify` do frontend tem um alvo deterministico para inspecionar.
+The handle is a stable identifier (for example a test id) that the scenario references by logical name. The adapter, in `codegen` or `execute`, materializes that handle on the stack's concrete surface. The scenario says "the handle `product-list` contains the ordered items"; it does not say "the `<ul class=...>` contains". This way the scenario text stays stable and the frontend `verify` has a deterministic target to inspect.
 
-## Unitario: descartavel, colado ao codigo
+## Unit: disposable, glued to the code
 
-O unitario testa os internals: ramos condicionais, casos de borda de uma funcao, invariantes de uma estrutura de dados interna. Ele mora dentro de `src/` do no, ao lado do codigo que cobre, e pertence ao mesmo escopo de contexto do codigo.
+The unit tests the internals: conditional branches, edge cases of a function, invariants of an internal data structure. It lives inside the node's `src/`, next to the code it covers, and belongs to the same context scope as the code.
 
-A propriedade que define o unitario e ser **descartavel**. Quando voce reescreve a unidade, voce reescreve (ou deleta) os testes unitarios dela sem cerimonia. Eles nao sao um contrato com ninguem de fora do no; sao ferramenta do autor da unidade. Por isso eles podem e devem citar nomes de funcao e de estrutura interna: e exatamente o que estao testando.
+The property that defines the unit is being **disposable**. When you rewrite the unit, you rewrite (or delete) its unit tests without ceremony. They are not a contract with anyone outside the node; they are a tool of the unit's author. That is why they can and should cite function names and internal structure: that is exactly what they are testing.
 
-Um unitario nunca vaza para fora do no. Se um teste precisa conhecer o internals de dois comportamentos ao mesmo tempo, ele nao e unitario: ou virou cenario (na fronteira) ou virou fluxo (atravessando comportamentos).
+A unit never leaks outside the node. If a test needs to know the internals of two behaviors at the same time, it is not a unit: it either became a scenario (on the boundary) or a flow (crossing behaviors).
 
-## Fluxo / e2e: a jornada atraves de N comportamentos
+## Flow / e2e: the journey across N behaviors
 
-O teste de fluxo cobre uma jornada de negocio que atravessa varios comportamentos, ancorada num PRD. Ele mora em `packages/contracts/_flows/<prd>/`, fora de qualquer no, porque nenhum no e dono dele: o dono e o nivel do PRD.
+The flow test covers a business journey that crosses several behaviors, anchored to a PRD. It lives in `packages/contracts/_flows/<prd>/`, outside any node, because no node owns it: the owner is the PRD level.
 
-Exemplo: uma jornada de compra que passa por `produto.listar`, `produto.detalhar`, `carrinho.revisar` e `checkout.pagar` vive em `packages/contracts/_flows/checkout-v1/`. Ela nao pertence a nenhum desses nos individualmente; ela verifica que a costura entre eles entrega a jornada prometida no PRD.
+Example: a purchase journey that passes through `product.list`, `product.detail`, `cart.review`, and `checkout.pay` lives in `packages/contracts/_flows/checkout-v1/`. It does not belong to any of those nodes individually; it verifies that the seam between them delivers the journey promised in the PRD.
 
-O fluxo e o unico teste autorizado a conhecer varios comportamentos de uma vez. Justamente por isso ele e caro em contexto e deve ser raro: um por jornada de PRD, nao um por combinacao possivel de nos.
+The flow is the only test authorized to know several behaviors at once. Precisely for that reason it is expensive in context and should be rare: one per PRD journey, not one per possible combination of nodes.
 
-## Teste de contrato bilateral, consumer-driven
+## Bilateral, consumer-driven contract test
 
-Um no two-sided existe nos dois lados com a mesma identidade e a mesma spec, ligados pelo contrato neutro. A forma do contrato (a estrutura de `input` e `output`) pode ate ser conferida por comparacao estrutural, mas **forma nao basta**: dois lados podem concordar na forma e discordar no significado. O backend pode ordenar por nome descendente enquanto o frontend espera ascendente; ambos respeitam a forma `output` e ainda assim o comportamento esta quebrado.
+A two-sided node exists on both sides with the same identity and the same spec, linked by the neutral contract. The shape of the contract (the structure of `input` and `output`) can even be checked by structural comparison, but **shape is not enough**: two sides can agree on shape and disagree on meaning. The backend can order by name descending while the frontend expects ascending; both respect the `output` shape and yet the behavior is broken.
 
-Por isso todo no two-sided passa por um **teste de contrato bilateral, consumer-driven**, antes de ser dado por pronto:
+That is why every two-sided node goes through a **bilateral, consumer-driven contract test** before being considered done:
 
-- **Consumer-driven**: o consumidor (tipicamente o frontend, ou o no que aparece em `consumes`) declara o que espera do contrato, incluindo as `rules` que dependem daquele significado. Essa expectativa e a fonte da verdade do teste.
-- **Bilateral**: o provedor (tipicamente o backend) e verificado contra essa expectativa. Os dois lados sao mantidos honestos pelo mesmo conjunto de cenarios de contrato, cada um provando a sua projecao (`[contrato]` de um lado, `[tela]` do outro).
+- **Consumer-driven**: the consumer (typically the frontend, or the node that appears in `consumes`) declares what it expects from the contract, including the `rules` that depend on that meaning. That expectation is the source of truth for the test.
+- **Bilateral**: the provider (typically the backend) is verified against that expectation. Both sides are kept honest by the same set of contract scenarios, each proving its own projection (`[contract]` on one side, `[screen]` on the other).
 
-E aqui que a decisao de tratar regra de negocio compartilhada como **dado** fecha o ciclo: as `rules` do contrato descrevem o significado, cada lado implementa, e o teste de contrato bilateral e o que garante que as duas implementacoes concordam sobre esse significado. Nao existe pacote de dominio em codigo compartilhado; existe o dado no bloco `rules` mais o teste bilateral que o mantem verdadeiro dos dois lados.
+This is where the decision to treat a shared business rule as **data** closes the loop: the contract's `rules` describe the meaning, each side implements it, and the bilateral contract test is what guarantees that the two implementations agree on that meaning. There is no domain package in shared code; there is the data in the `rules` block plus the bilateral test that keeps it true on both sides.
 
-O adapter honra isso na orquestracao: um no two-sided so e considerado pronto depois que o teste de contrato bilateral passa. Enquanto ele nao passa, os dois lados nao estao de fato espelhados.
+The adapter honors this in the orchestration: a two-sided node is only considered done after the bilateral contract test passes. As long as it does not pass, the two sides are not actually mirrored.
 
-## Property e mutation: auditoria opcional
+## Property and mutation: optional audit
 
-Property tests (gerar muitas entradas e checar invariantes) e mutation tests (introduzir defeitos e conferir se a suite os pega) sao **auditorias da suite**, nao parte do loop rapido de construcao do no.
+Property tests (generating many inputs and checking invariants) and mutation tests (introducing defects and checking whether the suite catches them) are **audits of the suite**, not part of the node's fast build loop.
 
-- Ficam **fora do loop rapido** `codegen -> plan -> execute -> verify -> review`. Eles nao decidem se um no esta pronto no dia a dia.
-- Servem para auditar a qualidade dos testes existentes: property tests exploram o espaco de entrada alem dos cenarios escritos; mutation tests medem se os cenarios e unitarios realmente pegariam uma regressao.
-- Sao opcionais no v1 e nao entram no `bpt.config.yaml`. Rode-os como passo separado, periodico, quando quiser confianca extra na suite.
+- They stay **outside the fast loop** `codegen -> plan -> execute -> verify -> review`. They do not decide whether a node is done day to day.
+- They serve to audit the quality of the existing tests: property tests explore the input space beyond the written scenarios; mutation tests measure whether the scenarios and units would actually catch a regression.
+- They are optional in v1 and do not enter `bpt.config.yaml`. Run them as a separate, periodic step, when you want extra confidence in the suite.
 
-## Revisao semantica: portao depois do verde
+## Semantic review: the gate after green
 
-Verde nao e pronto. Depois que os cenarios, os unitarios e (para two-sided) o contrato bilateral passam, o no ainda atravessa a **revisao semantica** (`review`), que e um portao **depois do verde**.
+Green is not done. After the scenarios, the units, and (for two-sided) the bilateral contract pass, the node still goes through the **semantic review** (`review`), which is a gate **after green**.
 
-A revisao semantica pergunta o que os testes nao conseguem perguntar: a implementacao faz o que a spec queria dizer, e nao apenas o que ela literalmente checou? A direcao de import esta respeitada? O comportamento honra o espirito das `rules`? Ela roda como ultimo estagio do loop e pode devolver findings, que voltam como feedback para uma nova tentativa (ate 3; a 3a falha marca o no como `blocked` com o worktree preservado).
+The semantic review asks what the tests cannot ask: does the implementation do what the spec meant, and not just what it literally checked? Is the import direction respected? Does the behavior honor the spirit of the `rules`? It runs as the last stage of the loop and can return findings, which come back as feedback for a new attempt (up to 3; the 3rd failure marks the node as `blocked` with the worktree preserved).
 
-## Como o verify hook consome os cenarios
+## How the verify hook consumes the scenarios
 
-O `verify` e o hook do adapter que transforma a spec em veredito. Ele nao inventa o que testar: ele **le os cenarios da `spec.md`** e executa a projecao correspondente ao lado em que esta rodando.
+`verify` is the adapter hook that turns the spec into a verdict. It does not invent what to test: it **reads the scenarios from the `spec.md`** and runs the projection corresponding to the side it is running on.
 
-Fluxo do `verify`, por no e por lado, chaveado em (lado, id):
+The `verify` flow, per node and per side, keyed on (side, id):
 
-1. Le a `spec.md` do contrato ligado ao no e extrai os cenarios da secao Cenarios.
-2. Seleciona a projecao do lado: no backend, as marcadas `[contrato]`; no frontend, as marcadas `[tela]`.
-3. Executa a projecao contra a implementacao daquele lado. No frontend, resolve os alvos via `ui_bindings` (superficie para handle estavel), o que torna a verificacao deterministica.
-4. Roda os testes unitarios do no daquele lado.
-5. Checa a **direcao de import** (enforcement de kernel): reprova `kernel -> behaviors/*` e `behaviors/a -> behaviors/b`; permite `behaviors/* -> kernel`, `behaviors/* -> contracts`, `kernel -> kernel` e `kernel -> contracts`.
-6. Para no two-sided, o pronto so vem depois que o teste de contrato bilateral tambem passa.
+1. Reads the `spec.md` of the contract linked to the node and extracts the scenarios from the Scenarios section.
+2. Selects the side's projection: on the backend, those marked `[contract]`; on the frontend, those marked `[screen]`.
+3. Runs the projection against that side's implementation. On the frontend, it resolves the targets via `ui_bindings` (surface to stable handle), which makes the verification deterministic.
+4. Runs the node's unit tests for that side.
+5. Checks the **import direction** (kernel enforcement): rejects `kernel -> behaviors/*` and `behaviors/a -> behaviors/b`; permits `behaviors/* -> kernel`, `behaviors/* -> contracts`, `kernel -> kernel`, and `kernel -> contracts`.
+6. For a two-sided node, done only comes after the bilateral contract test also passes.
 
-O `verify` reporta status pelo protocolo neutro do adapter: exit 0 significa que rodou (o veredito vem no payload JSON de stdout), exit diferente de 0 significa que o proprio adapter quebrou. No adapter placeholder, `verify` retorna status ok vazio; um adapter real de stack e quem de fato executa as projecoes, os unitarios e a checagem de import.
+`verify` reports status through the adapter's neutral protocol: exit 0 means it ran (the verdict comes in the stdout JSON payload), exit other than 0 means the adapter itself broke. In the placeholder adapter, `verify` returns an empty ok status; a real stack adapter is what actually runs the projections, the units, and the import check.

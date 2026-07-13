@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Hook execute do adapter placeholder: stub.
+"""Execute hook of the placeholder adapter: stub.
 
-Um adapter real implementaria o no dentro do worktree, so nas pastas do no (kernel
-apenas se o plano autorizou). O placeholder nao conhece stack: retorna status ok
-com payload vazio e loga em stderr.
+A real adapter would implement the node inside the worktree, only in the node's
+folders (kernel only if the plan authorized it). The placeholder knows no stack: it
+returns an ok status with an empty payload and logs to stderr.
 """
 import json
 import sys
@@ -17,7 +17,7 @@ def main():
     except Exception:
         req = {}
     node = req.get("node", {})
-    sys.stderr.write("[%s] placeholder stub, nenhuma stack conectada\n" % HOOK)
+    sys.stderr.write("[%s] placeholder stub, no stack connected\n" % HOOK)
     sys.stdout.write(json.dumps(
         {"status": "ok", "hook": HOOK, "id": node.get("id"), "note": "placeholder stub"},
         ensure_ascii=False) + "\n")

@@ -1,0 +1,33 @@
+# Neutral contract for product.detail.
+id: product.detail
+version: 1
+kind: query
+title: Detail product
+
+authorization:
+  required: true
+  roles: [customer]
+
+input:
+  productId: { type: text, required: true }
+
+output:
+  id:         { type: text }
+  name:       { type: text }
+  description: { type: text }
+  price:      { type: money }
+  available:  { type: boolean }
+
+rules:
+  - id: no-purchase-action-when-unavailable
+    describe: an unavailable product shows a notice and no purchase action
+
+errors:
+  - code: PRODUCT_NOT_FOUND
+    category: user
+    retryable: false
+    when: productId does not exist
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing or expired

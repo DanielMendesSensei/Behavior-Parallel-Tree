@@ -1,36 +1,36 @@
 # packages/contracts
 
-A junta neutra entre as duas arvores de comportamentos. Aqui mora o acordo que liga backend e frontend sem que um lado conheca o codigo do outro.
+The neutral joint between the two behavior trees. This is where the agreement that links backend and frontend lives, without either side knowing the other's code.
 
-## O que fica aqui
+## What lives here
 
-Um par de arquivos por comportamento, no caminho derivado do id (o ponto vira barra, ou seja `produto.listar` vira `produto/listar`):
+A pair of files per behavior, at the path derived from the id (the dot becomes a slash, that is, `product.list` becomes `product/list`):
 
-- `contract.yaml`: o contrato neutro (kind, input, output, rules, errors, authorization). Fonte da verdade da interface.
-- `spec.md`: a especificacao unica do comportamento (uma so, ao lado do contrato, nunca duplicada por lado).
+- `contract.yaml`: the neutral contract (kind, input, output, rules, errors, authorization). The source of truth for the interface.
+- `spec.md`: the single specification of the behavior (only one, next to the contract, never duplicated per side).
 
-Exemplo:
+Example:
 
 ```
 packages/contracts/
-  produto/listar/contract.yaml
-  produto/listar/spec.md
-  produto/detalhar/contract.yaml
-  produto/detalhar/spec.md
+  product/list/contract.yaml
+  product/list/spec.md
+  product/detail/contract.yaml
+  product/detail/spec.md
 ```
 
-## Regras da junta
+## Joint rules
 
-- **Ninguem e dono.** O contrato pertence a fronteira, nao a um lado. Backend e frontend implementam contra ele.
-- **Os apps leem, nunca escrevem fora de um PR de contrato.** Mudar a interface e um ato deliberado e revisado, nao um efeito colateral de implementar um lado.
-- **Um lado nunca importa do outro.** A unica ponte permitida e o contrato. `apps/backend` e `apps/frontend` so se enxergam atraves daqui.
-- **Regra de negocio compartilhada e dado**, no bloco `rules` do contrato. Cada lado a implementa; o teste bilateral mantem os dois honestos.
+- **Nobody owns it.** The contract belongs to the boundary, not to one side. Backend and frontend implement against it.
+- **The apps read, never write outside a contract PR.** Changing the interface is a deliberate, reviewed act, not a side effect of implementing one side.
+- **One side never imports from the other.** The only bridge allowed is the contract. `apps/backend` and `apps/frontend` see each other only through here.
+- **Shared business rules are data**, in the contract's `rules` block. Each side implements them; the bilateral test keeps both honest.
 
-## Formatos
+## Formats
 
-- Formato do contrato: veja `docs/CONTRACT-FORMAT.md`.
-- Formato da spec: veja `docs/SPEC-FORMAT.md`.
+- Contract format: see `docs/CONTRACT-FORMAT.md`.
+- Spec format: see `docs/SPEC-FORMAT.md`.
 
-## Futuro: `_flows/`
+## Future: `_flows/`
 
-Testes de fluxo (jornadas que atravessam varios comportamentos) vao morar em `packages/contracts/_flows/<prd>/`, com dono no nivel do PRD. Ainda nao faz parte do v1.
+Flow tests (journeys that cross several behaviors) will live in `packages/contracts/_flows/<prd>/`, owned at the PRD level. Not part of v1 yet.

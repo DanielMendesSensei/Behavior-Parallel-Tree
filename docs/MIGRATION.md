@@ -1,105 +1,105 @@
-# Migração
+# Migration
 
-Este documento cobre duas operações de migração no BPT:
+This document covers two migration operations in BPT:
 
-1. Renomear o id de um comportamento.
-2. Adotar BPT num código que já existe (visão geral do caminho incremental, estilo strangler).
+1. Renaming a behavior's id.
+2. Adopting BPT in code that already exists (an overview of the incremental, strangler-style path).
 
-Nenhuma das duas depende de tooling automático. No v1 o BPT declara e valida; mover pastas e reescrever referências é trabalho manual (ou do seu adapter, se você escrever um). O único automático aqui é `./bpt validate`, que reprova se algo ficou inconsistente.
+Neither depends on automatic tooling. In v1, BPT declares and validates; moving folders and rewriting references is manual work (or your adapter's work, if you write one). The only automatic piece here is `./bpt validate`, which fails if anything ended up inconsistent.
 
 ---
 
-## Renomear um id
+## Renaming an id
 
-O id é a identidade do comportamento. Ele aparece na convenção de pastas (`apps/<lado>/behaviors/<caminho>/`), no caminho do contrato (`packages/contracts/<caminho>/`), no `bpt.config.yaml` e em todo `deps`/`consumes` que aponta para ele. Por isso, na prática, o id é imutável: não existe operação "renomear". O que existe é mover tudo que carrega aquele id para o id novo, de uma vez, e validar.
+The id is the behavior's identity. It appears in the folder convention (`apps/<side>/behaviors/<path>/`), in the contract path (`packages/contracts/<path>/`), in `bpt.config.yaml`, and in every `deps`/`consumes` that points to it. For that reason, in practice, the id is immutable: there is no "rename" operation. What exists is moving everything that carries that id to the new id, all at once, and validating.
 
-Exemplo: renomear `produto.listar` para `catalogo.listar`.
+Example: renaming `product.list` to `catalog.list`.
 
-Lembre das formas canônicas antes de começar:
+Recall the canonical forms before you start:
 
-- id: `dominio.acao`, minúsculo, ponto separa segmentos, hífen só em composto, 2 a 3 segmentos.
-- caminho: o ponto vira barra, então `catalogo.listar` mora em `catalogo/listar`.
+- id: `domain.action`, lowercase, dots separate segments, hyphens only in compounds, 2 to 3 segments.
+- path: the dot becomes a slash, so `catalog.list` lives in `catalog/list`.
 
-### Passo a passo
+### Step by step
 
-1. **Mover as pastas de behaviors nos dois lados.**
-   O mesmo comportamento existe em cada lado com a mesma identidade, então os dois se movem juntos:
-   - `apps/backend/behaviors/produto/listar/` vira `apps/backend/behaviors/catalogo/listar/`
-   - `apps/frontend/behaviors/produto/listar/` vira `apps/frontend/behaviors/catalogo/listar/`
+1. **Move the behavior folders on both sides.**
+   The same behavior exists on each side with the same identity, so the two move together:
+   - `apps/backend/behaviors/product/list/` becomes `apps/backend/behaviors/catalog/list/`
+   - `apps/frontend/behaviors/product/list/` becomes `apps/frontend/behaviors/catalog/list/`
 
-   Leve o conteúdo inteiro do nó (a pasta `src/` com o código humano e, se existir, `__generated__/`). O `__generated__/` pode ser regenerado depois pelo hook `codegen` do adapter, então não é problema se ele ficar para trás.
+   Carry the entire node content (the `src/` folder with the human code and, if it exists, `__generated__/`). The `__generated__/` folder can be regenerated later by the adapter's `codegen` hook, so it is fine if it is left behind.
 
-2. **Mover a pasta em `packages/contracts`.**
-   `packages/contracts/produto/listar/` vira `packages/contracts/catalogo/listar/`. Isso carrega junto o `contract.yaml` e o `spec.md` (a spec é única, ao lado do contrato, nunca duplicada por lado).
+2. **Move the folder in `packages/contracts`.**
+   `packages/contracts/product/list/` becomes `packages/contracts/catalog/list/`. That carries the `contract.yaml` and the `spec.md` with it (the spec is single, next to the contract, never duplicated per side).
 
-3. **Atualizar o campo `id` dentro do contrato.**
-   Em `packages/contracts/catalogo/listar/contract.yaml`, o `id` deixa de ser `produto.listar` e passa a ser `catalogo.listar`. Ajuste também o `id` no front-matter do `spec.md` e o campo `contract` da spec (que aponta para o caminho, agora `catalogo/listar`).
+3. **Update the `id` field inside the contract.**
+   In `packages/contracts/catalog/list/contract.yaml`, the `id` stops being `product.list` and becomes `catalog.list`. Also adjust the `id` in the `spec.md` front-matter and the spec's `contract` field (which points at the path, now `catalog/list`).
 
-4. **Atualizar o `bpt.config.yaml`.**
-   Troque a entrada do nó em `nodes`: o id `produto.listar` passa a `catalogo.listar`. O bloco `sides` do nó continua igual (a topologia espelhada não mudou).
+4. **Update `bpt.config.yaml`.**
+   Swap the node entry in `nodes`: the id `product.list` becomes `catalog.list`. The node's `sides` block stays the same (the mirrored topology did not change).
 
-5. **Atualizar todos os `deps` e `consumes` que apontam para o id antigo.**
-   Este é o passo que mais escapa. Procure `produto.listar` em:
-   - `deps` de outros nós no `bpt.config.yaml` (por exemplo, `produto.detalhar` depende de `produto.listar` e precisa passar a depender de `catalogo.listar`).
-   - `consumes` no front-matter de outras `spec.md` (uma tela composta que consome este contrato).
-   - `deps` por lado, quando o grafo diverge (a forma `deps {backend [...], frontend [...]}`): olhe os dois lados.
+5. **Update every `deps` and `consumes` that points at the old id.**
+   This is the step that most often slips. Search for `product.list` in:
+   - `deps` of other nodes in `bpt.config.yaml` (for example, `product.detail` depends on `product.list` and needs to depend on `catalog.list` instead).
+   - `consumes` in the front-matter of other `spec.md` files (a composite screen that consumes this contract).
+   - per-side `deps`, when the graph diverges (the form `deps {backend [...], frontend [...]}`): check both sides.
 
-   Lembre que `deps` e `consumes` referenciam pelo id, não pelo caminho de arquivo. Todo lugar que escrevia `produto.listar` passa a escrever `catalogo.listar`.
+   Remember that `deps` and `consumes` reference by id, not by file path. Everywhere that wrote `product.list` now writes `catalog.list`.
 
-6. **Rodar o validador.**
+6. **Run the validator.**
    ```
    ./bpt validate
    ```
-   Ele reprova se algo ficou pela metade. Os invariantes que mais pegam erro de rename:
-   - **id único e no formato `dominio.acao`**: pega o caso de você ter renomeado o config mas não a pasta, ou vice-versa.
-   - **refs de `deps`/`consumes` existem**: pega o `deps` órfão que ainda aponta para `produto.listar`.
-   - **grafo acíclico**: pega o caso raro de o rename ter criado um ciclo (o Kahn aponta onde).
-   - **trio de arquivos existe** (contract + spec + pasta por lado): pega a pasta que você esqueceu de mover num dos lados.
+   It fails if anything was left half done. The invariants that most often catch a rename:
+   - **unique id in `domain.action` format**: catches the case where you renamed the config but not the folder, or vice versa.
+   - **`deps`/`consumes` refs exist**: catches the orphaned `deps` still pointing at `product.list`.
+   - **acyclic graph**: catches the rare case where the rename created a cycle (Kahn shows where).
+   - **file trio exists** (contract + spec + folder per side): catches the folder you forgot to move on one of the sides.
 
-   Só considere o rename pronto quando `./bpt validate` passa limpo.
+   Only consider the rename done when `./bpt validate` passes clean.
 
-### O que NÃO fazer
+### What NOT to do
 
-- Não deixe o id antigo e o novo convivendo. Não existe alias nem redirecionamento de id no v1. É corte seco.
-- Não renomeie só um lado. O comportamento tem a mesma identidade nos dois lados; um lado sem o outro quebra o invariante do trio de arquivos e o espelho.
-- Não edite `__generated__/` na mão para "consertar" o id. Isso é território do `codegen`; regenere.
+- Do not let the old id and the new one coexist. There is no id alias or redirect in v1. It is a clean cut.
+- Do not rename just one side. The behavior has the same identity on both sides; one side without the other breaks the file-trio invariant and the mirror.
+- Do not edit `__generated__/` by hand to "fix" the id. That is `codegen` territory; regenerate it.
 
 ---
 
-## Adotar BPT num código existente
+## Adopting BPT in existing code
 
-O caminho é incremental, no estilo strangler: você não reescreve o sistema. Você desenha a fronteira BPT em volta do que já existe e vai puxando pedaço por pedaço para dentro dela, enquanto o legado continua rodando atrás do kernel.
+The path is incremental, strangler style: you do not rewrite the system. You draw the BPT boundary around what already exists and pull it in piece by piece, while the legacy keeps running behind the kernel.
 
-> O guia completo de brownfield (adoção em larga escala, estrangulamento sistemático, convivência de versões) é trabalho futuro, fora do v1. O que está aqui é a visão geral do caminho, o suficiente para começar sem se pintar num canto.
+> The full brownfield guide (large-scale adoption, systematic strangling, version coexistence) is future work, outside v1. What is here is the overview of the path, enough to get started without painting yourself into a corner.
 
-### A ideia em uma frase
+### The idea in one sentence
 
-Trate o sistema legado como infraestrutura transversal (kernel) e vá extraindo comportamentos visíveis para a árvore, um de cada vez, cada um com contrato próprio.
+Treat the legacy system as cross-cutting infrastructure (kernel) and extract visible behaviors into the tree, one at a time, each with its own contract.
 
-### Passos da adoção
+### Adoption steps
 
-1. **Identificar os comportamentos visíveis.**
-   Um comportamento é uma ação de domínio com resultado observável, do ponto de vista de quem usa o sistema: "listar produtos", "detalhar produto", "filtrar catálogo". Não olhe para a estrutura interna do legado (classes, tabelas, serviços); olhe para as superfícies (telas, endpoints, comandos, jobs) e pergunte que ação cada uma entrega. Cada ação candidata vira um id na forma `dominio.acao`.
+1. **Identify the visible behaviors.**
+   A behavior is a domain action with an observable result, from the point of view of whoever uses the system: "list products", "detail product", "filter catalog". Do not look at the legacy's internal structure (classes, tables, services); look at the surfaces (screens, endpoints, commands, jobs) and ask what action each one delivers. Each candidate action becomes an id in the form `domain.action`.
 
-2. **Criar contratos para as fronteiras que já existem.**
-   Para cada comportamento identificado, escreva um `contract.yaml` que descreva a fronteira como ela é hoje: `input`, `output`, `errors`, `rules`, com os tipos neutros (`text`, `integer`, `decimal`, `boolean`, `money`, `list`, `object`). Você está documentando o contrato real do que o legado já faz, não inventando um novo. Escreva a `spec.md` ao lado, com os cenários por superfície. Comece pelas fronteiras mais estáveis e mais consumidas: elas dão o maior retorno de clareza.
+2. **Create contracts for the boundaries that already exist.**
+   For each identified behavior, write a `contract.yaml` that describes the boundary as it is today: `input`, `output`, `errors`, `rules`, with the neutral types (`text`, `integer`, `decimal`, `boolean`, `money`, `list`, `object`). You are documenting the real contract of what the legacy already does, not inventing a new one. Write the `spec.md` next to it, with the scenarios per surface. Start with the most stable and most consumed boundaries: they give the biggest return in clarity.
 
-3. **Mover uma tela (um comportamento) de cada vez.**
-   Escolha um comportamento e traga o código para dentro das pastas do nó (`apps/<lado>/behaviors/<caminho>/src/`), respeitando a topologia espelhada: o backend e o frontend do mesmo comportamento ganham a mesma identidade e a mesma spec, ligados pelo contrato. Registre o nó no `bpt.config.yaml` com seus `sides` e `deps`. Rode `./bpt validate`. Só então passe para o próximo comportamento. Um comportamento por vez mantém o raio de mudança pequeno, que é o objetivo do BPT.
+3. **Move one screen (one behavior) at a time.**
+   Pick a behavior and bring the code into the node folders (`apps/<side>/behaviors/<path>/src/`), respecting the mirrored topology: the backend and the frontend of the same behavior get the same identity and the same spec, linked by the contract. Register the node in `bpt.config.yaml` with its `sides` and `deps`. Run `./bpt validate`. Only then move to the next behavior. One behavior at a time keeps the change radius small, which is BPT's goal.
 
-4. **Deixar o legado atrás do kernel.**
-   Tudo que ainda não foi extraído continua existindo, mas o comportamento novo não fala direto com o legado espalhado: ele fala com o kernel do seu lado (infra transversal: auth, db, config, app-shell, design-system). O legado vira uma dependência transversal acessada pelo kernel. Isso respeita a regra de direção de import (comportamento importa do kernel, kernel nunca importa de comportamento) e mantém o legado isolado atrás de uma fronteira única, em vez de vazar para dentro de cada nó novo.
+4. **Leave the legacy behind the kernel.**
+   Everything not yet extracted keeps existing, but the new behavior does not talk directly to the scattered legacy: it talks to its side's kernel (cross-cutting infra: auth, db, config, app-shell, design-system). The legacy becomes a cross-cutting dependency accessed through the kernel. This respects the import-direction rule (a behavior imports from the kernel, the kernel never imports from a behavior) and keeps the legacy isolated behind a single boundary, instead of leaking into every new node.
 
-   À medida que mais comportamentos saem para a árvore, o legado atrás do kernel encolhe. Quando um pedaço do legado deixa de ser usado por qualquer comportamento, ele pode ser removido. É o estrangulamento: o novo cresce, o velho míngua.
+   As more behaviors move out into the tree, the legacy behind the kernel shrinks. When a piece of legacy stops being used by any behavior, it can be removed. That is the strangling: the new grows, the old withers.
 
-### Ordem sugerida na prática
+### Suggested order in practice
 
-- Comece por um comportamento de leitura, simples e sem dependências (um `query` folha, como `produto.listar`). Menos risco, contrato mais fácil de acertar.
-- Depois puxe os comportamentos que dependem dele, na ordem topológica (as ondas que o núcleo deriva). Assim os `deps` já apontam para nós que existem.
-- Deixe os comportamentos de escrita e os fluxos que cruzam vários comportamentos para quando você já tiver confiança no formato dos contratos.
+- Start with a read behavior, simple and dependency-free (a leaf `query`, like `product.list`). Less risk, an easier contract to get right.
+- Then pull the behaviors that depend on it, in topological order (the waves the core derives). That way the `deps` already point at nodes that exist.
+- Leave the write behaviors and the flows that cross several behaviors for when you already have confidence in the shape of the contracts.
 
-### O que esperar do v1
+### What to expect from v1
 
-- **Sem migração automática.** Não há ferramenta que leia seu código legado e gere contratos ou mova pastas. O `./bpt validate` confere consistência depois que você fez o trabalho; ele não faz o trabalho.
-- **Regra de negócio compartilhada vira dado, não código.** Se uma regra do legado precisa valer nos dois lados, ela vai para o bloco `rules` do contrato e cada lado a implementa, com teste bilateral. Não crie um pacote de domínio compartilhado durante a adoção; isso reintroduz o acoplamento global que o BPT existe para evitar.
-- **O guia completo de brownfield é futuro.** Convivência de versões (N/N-1, expand/contract), registro central de contratos e orquestração real de extração estão fora do v1. Por enquanto, adoção é manual, incremental e validada a cada passo.
+- **No automatic migration.** There is no tool that reads your legacy code and generates contracts or moves folders. `./bpt validate` checks consistency after you have done the work; it does not do the work.
+- **Shared business rules become data, not code.** If a legacy rule must hold on both sides, it goes into the contract's `rules` block and each side implements it, with a bilateral test. Do not create a shared domain package during adoption; that reintroduces the global coupling that BPT exists to avoid.
+- **The full brownfield guide is future work.** Version coexistence (N/N-1, expand/contract), a central contract registry, and real extraction orchestration are outside v1. For now, adoption is manual, incremental, and validated at each step.

@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Validador de referencia do Behavior Parallel Tree (BPT).
+"""Reference validator for the Behavior Parallel Tree (BPT).
 
-Ferramenta de desenvolvimento (tooling), NAO a stack do app. Le bpt.config.yaml
-e a arvore de arquivos e roda as 7 invariantes do nucleo. Nenhum efeito colateral:
-so le, valida e reporta. Um adapter real pode reimplementar isto na sua stack.
+Development tooling, NOT the app stack. It reads bpt.config.yaml and the file
+tree and runs the 7 core invariants. No side effects: it only reads, validates,
+and reports. A real adapter may reimplement this in its own stack.
 
-Uso:
-    ./bpt validate                 # valida o projeto no diretorio atual
-    python3 tools/bpt/validate.py [caminho-da-raiz]
+Usage:
+    ./bpt validate                 # validate the project in the current directory
+    python3 tools/bpt/validate.py [root-path]
 
-Saida:
-    exit 0  -> tudo valido (pode haver avisos)
-    exit 1  -> uma ou mais invariantes violadas
+Output:
+    exit 0  -> everything valid (there may be warnings)
+    exit 1  -> one or more invariants violated
 
-Dependencia unica: PyYAML (pip install pyyaml). E tooling, trocavel.
+Single dependency: PyYAML (pip install pyyaml). It is tooling, swappable.
 """
 import os
 import re
@@ -23,15 +23,15 @@ try:
     import yaml
 except ImportError:
     sys.stderr.write(
-        "erro: PyYAML nao encontrado. Instale com: pip install pyyaml\n"
-        "(e dependencia de tooling do validador, nao da stack do app)\n"
+        "error: PyYAML not found. Install with: pip install pyyaml\n"
+        "(it is a tooling dependency of the validator, not of the app stack)\n"
     )
     raise SystemExit(2)
 
-ID_RE = re.compile(r"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,2}$")  # 2 a 3 segmentos
+ID_RE = re.compile(r"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,2}$")  # 2 to 3 segments
 SUPPORTED_SCHEMA = {"bpt/v1"}
 
-# Acumuladores de diagnostico.
+# Diagnostic accumulators.
 ERRORS = []
 WARNINGS = []
 
@@ -47,13 +47,13 @@ def warn(inv, msg):
 def load_config(root):
     path = os.path.join(root, "bpt.config.yaml")
     if not os.path.exists(path):
-        err(0, "bpt.config.yaml nao encontrado em %s" % root)
+        err(0, "bpt.config.yaml not found in %s" % root)
         return None
     with open(path, encoding="utf-8") as f:
         try:
             return yaml.safe_load(f)
         except yaml.YAMLError as e:
-            err(0, "bpt.config.yaml invalido: %s" % e)
+            err(0, "bpt.config.yaml invalid: %s" % e)
             return None
 
 
@@ -62,7 +62,7 @@ def node_path(node_id):
 
 
 def collect_dep_ids(node):
-    """Retorna a lista plana de ids referenciados em deps (lista ou por lado) + consumes."""
+    """Return the flat list of ids referenced in deps (list or per-side) plus consumes."""
     refs = []
     deps = node.get("deps", [])
     if isinstance(deps, dict):
@@ -75,7 +75,7 @@ def collect_dep_ids(node):
 
 
 def build_edges(nodes_by_id):
-    """Arestas dependente -> dependencia, a partir de deps e consumes."""
+    """Edges dependent -> dependency, from deps and consumes."""
     edges = {}
     for nid, node in nodes_by_id.items():
         edges[nid] = set(r for r in collect_dep_ids(node) if r in nodes_by_id)
@@ -83,11 +83,11 @@ def build_edges(nodes_by_id):
 
 
 def find_cycle(edges):
-    """Kahn: se sobrar no com grau de entrada > 0, ha ciclo. Devolve um caminho de ciclo."""
+    """Kahn: if a node remains with in-degree > 0, there is a cycle. Returns a cycle path."""
     indeg = {n: 0 for n in edges}
     for n, deps in edges.items():
         for d in deps:
-            indeg[n] += 1  # n depende de d, entao n tem uma aresta de entrada
+            indeg[n] += 1  # n depends on d, so n has an incoming edge
     queue = [n for n, g in indeg.items() if g == 0]
     seen = 0
     while queue:
@@ -100,18 +100,18 @@ def find_cycle(edges):
                     queue.append(m)
     if seen == len(edges):
         return None
-    # ainda ha nos presos: reconstroi um ciclo simples via DFS entre os restantes
-    restantes = {n for n, g in indeg.items() if g > 0}
-    return _trace_cycle(edges, restantes)
+    # nodes still stuck: rebuild a simple cycle via DFS among the remaining ones
+    remaining = {n for n, g in indeg.items() if g > 0}
+    return _trace_cycle(edges, remaining)
 
 
-def _trace_cycle(edges, restantes):
-    start = next(iter(restantes))
+def _trace_cycle(edges, remaining):
+    start = next(iter(remaining))
     path = [start]
     seen = {start}
     cur = start
     while True:
-        nxt = next((d for d in edges[cur] if d in restantes), None)
+        nxt = next((d for d in edges[cur] if d in remaining), None)
         if nxt is None:
             return path
         if nxt in seen:
@@ -122,14 +122,14 @@ def _trace_cycle(edges, restantes):
 
 
 def waves(edges):
-    """Ordena em ondas topologicas (o que o adapter roda em paralelo por onda)."""
+    """Sort into topological waves (what the adapter runs in parallel per wave)."""
     indeg = {n: len(deps) for n, deps in edges.items()}
     result = []
     remaining = dict(indeg)
     while remaining:
         layer = sorted(n for n, g in remaining.items() if g == 0)
         if not layer:
-            return None  # ciclo
+            return None  # cycle
         result.append(layer)
         for n in layer:
             del remaining[n]
@@ -143,12 +143,12 @@ def validate(root):
     if cfg is None:
         return
 
-    # INV 1: schema presente e suportado.
+    # INV 1: schema present and supported.
     schema = cfg.get("schema")
     if not schema:
-        err(1, "campo 'schema' ausente em bpt.config.yaml")
+        err(1, "field 'schema' missing in bpt.config.yaml")
     elif schema not in SUPPORTED_SCHEMA:
-        err(1, "schema '%s' nao suportado (suportados: %s)" % (schema, ", ".join(sorted(SUPPORTED_SCHEMA))))
+        err(1, "schema '%s' not supported (supported: %s)" % (schema, ", ".join(sorted(SUPPORTED_SCHEMA))))
 
     sides_cfg = cfg.get("sides", {}) or {}
     contracts_root = (cfg.get("contracts", {}) or {}).get("root", "packages/contracts")
@@ -158,75 +158,75 @@ def validate(root):
     for node in nodes:
         nid = node.get("id")
         if not nid:
-            err(2, "no sem 'id' em nodes")
+            err(2, "node without 'id' in nodes")
             continue
-        # INV 2: id unico e no formato dominio.acao.
+        # INV 2: unique id in domain.action format.
         if nid in nodes_by_id:
-            err(2, "id duplicado: %s" % nid)
+            err(2, "duplicate id: %s" % nid)
         if not ID_RE.match(nid):
-            err(2, "id fora do formato dominio.acao (2 a 3 segmentos, minusculo): %s" % nid)
+            err(2, "id not in domain.action format (2 to 3 segments, lowercase): %s" % nid)
         nodes_by_id[nid] = node
 
     for nid, node in nodes_by_id.items():
         sides = node.get("sides") or []
-        # INV 3: sides nao vazio e cada lado existe em sides do topo.
+        # INV 3: sides not empty and each side exists in the top-level sides.
         if not sides:
-            err(3, "%s: 'sides' vazio" % nid)
+            err(3, "%s: 'sides' empty" % nid)
         for s in sides:
             if s not in sides_cfg:
-                err(3, "%s: lado '%s' nao declarado em sides do topo" % (nid, s))
+                err(3, "%s: side '%s' not declared in top-level sides" % (nid, s))
 
-        # INV 6: nenhum id cai sob pasta de kernel.
+        # INV 6: no id falls under a kernel folder.
         if nid.split(".")[0] == "kernel":
-            err(6, "%s: dominio 'kernel' e reservado (kernel fica fora da arvore)" % nid)
+            err(6, "%s: domain 'kernel' is reserved (kernel lives outside the tree)" % nid)
 
-        # INV 5: two-sided tem contrato; one-sided tem contract: none.
+        # INV 5: two-sided has a contract; one-sided has contract: none.
         contract_field = node.get("contract")
         two_sided = len(sides) >= 2
         if two_sided:
             if contract_field == "none":
-                err(5, "%s e two-sided mas declara contract: none" % nid)
+                err(5, "%s is two-sided but declares contract: none" % nid)
         else:
             if contract_field != "none":
-                err(5, "%s e one-sided; declare contract: none" % nid)
+                err(5, "%s is one-sided; declare contract: none" % nid)
 
-    # INV 4: refs existem, sem auto-dependencia, grafo aciclico.
+    # INV 4: refs exist, no self-dependency, acyclic graph.
     for nid, node in nodes_by_id.items():
         for ref in collect_dep_ids(node):
             if ref == nid:
-                err(4, "%s depende de si mesmo" % nid)
+                err(4, "%s depends on itself" % nid)
             if ref not in nodes_by_id:
-                err(4, "%s referencia id inexistente: %s" % (nid, ref))
+                err(4, "%s references a nonexistent id: %s" % (nid, ref))
     edges = build_edges(nodes_by_id)
     cycle = find_cycle(edges)
     if cycle:
-        err(4, "ciclo de dependencia: %s" % " -> ".join(cycle))
+        err(4, "dependency cycle: %s" % " -> ".join(cycle))
 
-    # INV 7: trio de arquivos existe (contrato + spec + pasta por lado).
+    # INV 7: file trio exists (contract + spec + folder per side).
     for nid, node in nodes_by_id.items():
         sides = node.get("sides") or []
         p = node_path(nid)
         two_sided = len(sides) >= 2 and node.get("contract") != "none"
         spec = os.path.join(root, contracts_root, p, "spec.md")
         if not os.path.exists(spec):
-            err(7, "%s: spec ausente em %s" % (nid, os.path.relpath(spec, root)))
+            err(7, "%s: spec missing in %s" % (nid, os.path.relpath(spec, root)))
         if two_sided:
             contract = os.path.join(root, contracts_root, p, "contract.yaml")
             if not os.path.exists(contract):
-                err(7, "%s: contract.yaml ausente em %s" % (nid, os.path.relpath(contract, root)))
+                err(7, "%s: contract.yaml missing in %s" % (nid, os.path.relpath(contract, root)))
         for s in sides:
             side_root = (sides_cfg.get(s) or {}).get("root", os.path.join("apps", s, "behaviors"))
             folder = os.path.join(root, side_root, p)
             if not os.path.isdir(folder):
-                err(7, "%s: pasta do lado '%s' ausente em %s" % (nid, s, os.path.relpath(folder, root)))
+                err(7, "%s: folder for side '%s' missing in %s" % (nid, s, os.path.relpath(folder, root)))
 
-    # Informativo: ondas de paralelismo (o nucleo deriva, o adapter percorre).
+    # Informational: parallelism waves (the core derives them, the adapter walks them).
     if not ERRORS:
         w = waves(edges)
         if w:
-            print("ondas de paralelismo (o adapter percorre nesta ordem):")
+            print("parallelism waves (the adapter walks in this order):")
             for i, layer in enumerate(w, 1):
-                print("  onda %d: %s" % (i, ", ".join(layer)))
+                print("  wave %d: %s" % (i, ", ".join(layer)))
 
 
 def main(argv):
@@ -234,13 +234,13 @@ def main(argv):
     print("bpt validate: %s" % root)
     validate(root)
     for w in WARNINGS:
-        print("aviso  %s" % w)
+        print("warning  %s" % w)
     if ERRORS:
         for e in ERRORS:
-            print("ERRO   %s" % e)
-        print("\nfalhou: %d erro(s), %d aviso(s)" % (len(ERRORS), len(WARNINGS)))
+            print("ERROR   %s" % e)
+        print("\nfailed: %d error(s), %d warning(s)" % (len(ERRORS), len(WARNINGS)))
         return 1
-    print("\nok: bpt.config.yaml e a arvore passaram nas 7 invariantes (%d aviso(s))" % len(WARNINGS))
+    print("\nok: bpt.config.yaml and the tree passed the 7 invariants (%d warning(s))" % len(WARNINGS))
     return 0
 
 

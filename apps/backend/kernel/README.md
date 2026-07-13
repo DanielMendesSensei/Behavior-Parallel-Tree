@@ -1,24 +1,24 @@
-# Kernel do backend
+# Backend Kernel
 
-Este e o kernel do lado backend: infra transversal que fica FORA da arvore de comportamentos. Aqui moram apenas coisas como auth, acesso a banco (db), config e app-shell, ou seja, o encanamento que varios comportamentos compartilham.
+This is the backend-side kernel: cross-cutting infrastructure that sits OUTSIDE the behavior tree. Only things like auth, database access (db), config, and app-shell live here, that is, the plumbing that several behaviors share.
 
-O kernel NAO e um comportamento. Ele nao tem contrato, nao tem spec e nao aparece como no no `bpt.config.yaml`. O dominio `kernel` e reservado: nenhum id de comportamento pode viver sob esta pasta.
+The kernel is NOT a behavior. It has no contract, no spec, and does not appear as a node in `bpt.config.yaml`. The `kernel` domain is reserved: no behavior id can live under this folder.
 
-## Regra de direcao (absoluta)
+## Direction rule (absolute)
 
-- Comportamento importa do kernel: permitido.
-- Kernel importa de comportamento: PROIBIDO.
+- Behavior imports from the kernel: allowed.
+- Kernel imports from a behavior: FORBIDDEN.
 
-O kernel nunca conhece um comportamento pelo nome. Se algo aqui precisa saber qual comportamento o chama, esse algo esta no lugar errado. O `verify` do adapter reprova qualquer import na direcao `kernel -> behaviors/*`.
+The kernel never knows a behavior by name. If something here needs to know which behavior calls it, that something is in the wrong place. The adapter's `verify` fails any import in the `kernel -> behaviors/*` direction.
 
-## Regra de negocio compartilhada nao mora aqui
+## Shared business rules do not live here
 
-Regra de negocio que dois lados ou dois comportamentos precisam respeitar NAO vira codigo de kernel. Ela vira DADO, declarada no bloco `rules` do contrato, e cada lado a implementa. Um teste bilateral mantem os dois lados honestos. O kernel guarda infra, nao politica de dominio.
+A business rule that two sides or two behaviors must respect does NOT become kernel code. It becomes DATA, declared in the contract's `rules` block, and each side implements it. A bilateral test keeps both sides honest. The kernel holds infrastructure, not domain policy.
 
-## Subpastas vazias de proposito
+## Subfolders empty on purpose
 
-Este kernel nasce vazio por ser agnostico de stack: o nucleo do BPT nao conhece linguagem, framework nem runtime. As subpastas (auth, db, config, app-shell, design-system e afins) sao preenchidas pelo adapter e pela stack escolhida do projeto, nao pelo nucleo.
+This kernel is born empty because it is stack-agnostic: the BPT core knows no language, framework, or runtime. The subfolders (auth, db, config, app-shell, design-system, and the like) are filled by the adapter and the project's chosen stack, not by the core.
 
-## Saiba mais
+## Learn more
 
-Criterios de promocao ao kernel, regra do tres, anti-inchaco, democao, ondas serializadas e enforcement completo estao em `docs/KERNEL.md`.
+Kernel promotion criteria, the rule of three, anti-bloat, demotion, serialized waves, and full enforcement are in `docs/KERNEL.md`.

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Hook verify do adapter placeholder: stub.
+"""Verify hook of the placeholder adapter: stub.
 
-Um adapter real rodaria os cenarios da spec (na superficie do lado) mais os testes
-unitarios, e checaria a direcao de import (behavior nunca importa behavior; kernel
-nunca importa behavior). O placeholder nao conhece stack: retorna status ok com
-payload vazio e loga em stderr.
+A real adapter would run the spec scenarios (on the side's surface) plus the unit
+tests, and check import direction (a behavior never imports a behavior; the kernel
+never imports a behavior). The placeholder knows no stack: it returns an ok status
+with an empty payload and logs to stderr.
 """
 import json
 import sys
@@ -18,7 +18,7 @@ def main():
     except Exception:
         req = {}
     node = req.get("node", {})
-    sys.stderr.write("[%s] placeholder stub, nenhuma stack conectada\n" % HOOK)
+    sys.stderr.write("[%s] placeholder stub, no stack connected\n" % HOOK)
     sys.stdout.write(json.dumps(
         {"status": "ok", "hook": HOOK, "id": node.get("id"), "scenarios": [], "note": "placeholder stub"},
         ensure_ascii=False) + "\n")

@@ -1,112 +1,112 @@
 # BPT Rulebook
 
-O documento mestre do Behavior Parallel Tree (BPT). Aqui estao a visao geral, os principios, as formas canonicas e o mapa do template. Para o detalhe de cada parte, consulte os docs especificos apontados ao longo do texto.
+The master document of the Behavior Parallel Tree (BPT). Here you find the overview, the principles, the canonical forms, and the map of the template. For the detail of each part, see the specific docs pointed to throughout the text.
 
-## BPT em uma frase
+## BPT in one sentence
 
-Duas arvores espelhadas de comportamentos, onde cada comportamento e uma ilha isolada que um agente constroi em paralelo, porque a arvore declara nos, dependencias e o contrato neutro que liga backend e frontend, com um unico objetivo: minimizar o contexto necessario para fazer uma mudanca.
+Two mirrored trees of behaviors, where each behavior is an isolated island that an agent builds in parallel, because the tree declares nodes, dependencies, and the neutral contract that links backend and frontend, with a single goal: to minimize the context needed to make a change.
 
-## O que e o BPT
+## What BPT is
 
-O BPT e uma arquitetura de software agnostica de stack. Ele nao conhece linguagem, framework nem runtime. O que ele define e uma forma de organizar o codigo em torno de comportamentos, de modo que:
+BPT is a stack-agnostic software architecture. It knows no language, framework, or runtime. What it defines is a way to organize code around behaviors, so that:
 
-- cada comportamento seja uma unidade isolada, com fronteiras claras;
-- o mesmo comportamento exista dos dois lados (backend e frontend) com a mesma identidade, ligado por um contrato neutro;
-- um agente (humano ou automatizado) consiga trabalhar em um comportamento carregando o minimo de contexto possivel;
-- os comportamentos independentes possam ser construidos em paralelo, respeitando um grafo de dependencias.
+- each behavior is an isolated unit, with clear boundaries;
+- the same behavior exists on both sides (backend and frontend) with the same identity, linked by a neutral contract;
+- an agent (human or automated) can work on a behavior loading the least possible context;
+- independent behaviors can be built in parallel, respecting a dependency graph.
 
-O nucleo do BPT apenas declara (arvore, espelho, contrato, spec). Quem executa (worktrees, paralelismo, loop de construcao) e um adapter especifico de stack. O template nasce com 1 adapter placeholder e um validador minimo.
+The BPT core only declares (tree, mirror, contract, spec). The one that executes (worktrees, parallelism, build loop) is a stack-specific adapter. The template ships with 1 placeholder adapter and a minimal validator.
 
-## Os 8 principios
+## The 8 principles
 
-1. Contexto minimo por mudanca. Toda decisao de arquitetura serve a esta meta: para mudar um comportamento, voce carrega o comportamento, seu contrato e o kernel. Nada mais.
-2. Comportamento e a unidade atomica. Nao se pensa em camadas nem em modulos tecnicos. Pensa-se em comportamentos observaveis (produto.listar, produto.detalhar). Tudo que um comportamento precisa mora junto dele.
-3. Outside-in. Comeca pela superficie e pelo resultado observavel (a spec), depois o contrato, depois a implementacao de cada lado. O que o usuario percebe vem antes do como.
-4. Arvores espelhadas por identidade, junta por contrato. Backend e frontend sao arvores separadas. O mesmo comportamento existe nos dois lados com a mesma identidade e a mesma spec. A junta entre eles e um contrato neutro. O espelho e N:M via contrato, nao um acoplamento 1:1 rigido.
-5. Comportamentos sao ilhas. Um comportamento nao importa de outro comportamento. Se dois comportamentos precisam de algo em comum, ou vira dependencia declarada via contrato, ou sobe para o kernel. Ilha nao fala com ilha direto.
-6. Duplique antes de abstrair. Regra do tres: o codigo nasce no comportamento, e copiado na 2a ocorrencia, e so sobe para o kernel na 3a. Abstracao precoce e o maior inimigo do contexto minimo.
-7. Core declara, adapter executa. O nucleo do BPT declara a estrutura (arvore, espelho, contrato, spec) e valida invariantes. O adapter da stack executa (cria worktrees, roda o loop de construcao, gera codigo). A fronteira entre os dois e um protocolo neutro de hooks.
-8. Uma forma canonica so. Cada coisa tem uma unica forma de ser escrita: um id, um caminho, um lugar para a spec, um lugar para o contrato. Sem sinonimos, sem variantes. A convencao e a documentacao.
+1. Minimal context per change. Every architecture decision serves this goal: to change a behavior, you load the behavior, its contract, and the kernel. Nothing else.
+2. The behavior is the atomic unit. You do not think in layers or technical modules. You think in observable behaviors (product.list, product.detail). Everything a behavior needs lives next to it.
+3. Outside-in. Start from the surface and the observable result (the spec), then the contract, then each side's implementation. What the user perceives comes before the how.
+4. Trees mirrored by identity, joined by contract. Backend and frontend are separate trees. The same behavior exists on both sides with the same identity and the same spec. The joint between them is a neutral contract. The mirror is N:M through the contract, not a rigid 1:1 coupling.
+5. Behaviors are islands. A behavior does not import from another behavior. If two behaviors need something in common, it either becomes a dependency declared through a contract, or it moves up to the kernel. An island does not talk to an island directly.
+6. Duplicate before abstracting. Rule of three: code is born in the behavior, is copied on the 2nd occurrence, and only moves up to the kernel on the 3rd. Premature abstraction is the biggest enemy of minimal context.
+7. Core declares, adapter executes. The BPT core declares the structure (tree, mirror, contract, spec) and validates invariants. The stack adapter executes (creates worktrees, runs the build loop, generates code). The boundary between the two is a neutral hook protocol.
+8. One canonical form only. Each thing has a single way to be written: one id, one path, one place for the spec, one place for the contract. No synonyms, no variants. The convention is the documentation.
 
-## Formas canonicas
+## Canonical forms
 
-Uma so forma, valida em todo o template.
+One form, valid across the whole template.
 
-| Item | Forma canonica |
+| Item | Canonical form |
 | --- | --- |
-| id | `dominio.acao` (minusculo, ponto separa segmentos, hifen em composto), 2 a 3 segmentos, prefira 2 |
-| caminho | o ponto vira barra: `produto.listar` vira `produto/listar` |
-| raiz de comportamentos | `apps/<lado>/behaviors/<caminho>/` |
-| contrato | `packages/contracts/<caminho>/contract.yaml` |
-| spec | `packages/contracts/<caminho>/spec.md` (uma so, ao lado do contrato, nunca duplicada por lado) |
-| config | `bpt.config.yaml` (arquivo unico na raiz) |
-| codigo humano | `src/` dentro do no |
-| codigo gerado | `__generated__/` dentro do no (o adapter preenche) |
+| id | `domain.action` (lowercase, dot separates segments, hyphen in compounds), 2 to 3 segments, prefer 2 |
+| path | the dot becomes a slash: `product.list` becomes `product/list` |
+| behaviors root | `apps/<side>/behaviors/<path>/` |
+| contract | `packages/contracts/<path>/contract.yaml` |
+| spec | `packages/contracts/<path>/spec.md` (a single one, next to the contract, never duplicated per side) |
+| config | `bpt.config.yaml` (single file at the root) |
+| human code | `src/` inside the node |
+| generated code | `__generated__/` inside the node (the adapter fills it) |
 
-Nao existe arquivo de metadado por no. A pasta na convencao mais a entrada no `bpt.config.yaml` ja sao a declaracao do no.
+There is no per-node metadata file. The convention folder plus the entry in `bpt.config.yaml` are the node's declaration.
 
-Detalhe completo em [NAMING.md](./NAMING.md).
+Full detail in [NAMING.md](./NAMING.md).
 
-## Estrutura do monorepo
+## Monorepo structure
 
-Um unico monorepo. As duas arvores de comportamento vivem sob `apps/`, os contratos e specs vivem sob `packages/contracts/`, e a config na raiz.
+A single monorepo. The two behavior trees live under `apps/`, the contracts and specs live under `packages/contracts/`, and the config at the root.
 
 ```
-meu-app/
+my-app/
   bpt.config.yaml
   apps/
     backend/
-      kernel/                         infra transversal do backend
+      kernel/                         backend cross-cutting infra
       behaviors/
-        produto/
-          listar/
-            src/                       codigo humano
-            __generated__/             codigo gerado pelo adapter
-          detalhar/
+        product/
+          list/
+            src/                       human code
+            __generated__/             code generated by the adapter
+          detail/
             src/
             __generated__/
     frontend/
-      kernel/                         infra transversal do frontend
+      kernel/                         frontend cross-cutting infra
       behaviors/
-        produto/
-          listar/
+        product/
+          list/
             src/
             __generated__/
-          detalhar/
+          detail/
             src/
             __generated__/
   packages/
     contracts/
-      produto/
-        listar/
-          contract.yaml                contrato neutro
-          spec.md                      spec unica, os dois lados
-        detalhar/
+      product/
+        list/
+          contract.yaml                neutral contract
+          spec.md                      single spec, both sides
+        detail/
           contract.yaml
           spec.md
-      _flows/                          testes de fluxo/e2e por PRD
+      _flows/                          flow/e2e tests per PRD
   tools/
     bpt/
-      validate.py                      validador minimo (Python 3 + PyYAML)
+      validate.py                      minimal validator (Python 3 + PyYAML)
 ```
 
-O mesmo comportamento (`produto.listar`) aparece em `apps/backend/behaviors/produto/listar/` e em `apps/frontend/behaviors/produto/listar/`, com um unico contrato e uma unica spec em `packages/contracts/produto/listar/`.
+The same behavior (`product.list`) appears in `apps/backend/behaviors/product/list/` and in `apps/frontend/behaviors/product/list/`, with a single contract and a single spec in `packages/contracts/product/list/`.
 
-## O modelo de no
+## The node model
 
-A unidade de execucao e o no por lado, chaveado em `(lado, id)`. Um no two-sided como `produto.listar` gera duas unidades de trabalho: `(backend, produto.listar)` e `(frontend, produto.listar)`.
+The execution unit is the node per side, keyed by `(side, id)`. A two-sided node like `product.list` produces two units of work: `(backend, product.list)` and `(frontend, product.list)`.
 
-Cada no e declarado no `bpt.config.yaml` com:
+Each node is declared in `bpt.config.yaml` with:
 
-- `id`: a identidade canonica, unica no projeto.
-- `sides`: em quais lados o comportamento existe (`sides` e uma lista aberta).
-- `deps`: de quais outros comportamentos ele depende. Pode divergir por lado.
+- `id`: the canonical identity, unique in the project.
+- `sides`: which sides the behavior exists on (`sides` is an open list).
+- `deps`: which other behaviors it depends on. It can diverge per side.
 
-O `bpt.config.yaml` vivo nasce com dois nos reais:
+The live `bpt.config.yaml` ships with two real nodes:
 
 ```yaml
 schema: bpt/v1
-project: meu-app
+project: my-app
 adapter: placeholder
 sides:
   backend:  { root: apps/backend/behaviors,  kernel: apps/backend/kernel }
@@ -114,113 +114,113 @@ sides:
 contracts:
   root: packages/contracts
 nodes:
-  produto.listar:   { sides: [backend, frontend], deps: [] }
-  produto.detalhar: { sides: [backend, frontend], deps: [produto.listar] }
+  product.list:   { sides: [backend, frontend], deps: [] }
+  product.detail: { sides: [backend, frontend], deps: [product.list] }
 ```
 
-O naming resumido: id em `dominio.acao`, 2 a 3 segmentos (prefira 2), minusculo, ponto separando segmentos, hifen dentro de um segmento composto. O caminho no disco troca ponto por barra. Regras completas em [NAMING.md](./NAMING.md).
+Naming in short: id in `domain.action`, 2 to 3 segments (prefer 2), lowercase, dot separating segments, hyphen inside a compound segment. The path on disk swaps the dot for a slash. Full rules in [NAMING.md](./NAMING.md).
 
-Cada no two-sided precisa do trio: `contract.yaml`, `spec.md` e a pasta por lado. Formato da spec em [SPEC-FORMAT.md](./SPEC-FORMAT.md), formato do contrato em [CONTRACT-FORMAT.md](./CONTRACT-FORMAT.md).
+Each two-sided node needs the trio: `contract.yaml`, `spec.md`, and the folder per side. Spec format in [SPEC-FORMAT.md](./SPEC-FORMAT.md), contract format in [CONTRACT-FORMAT.md](./CONTRACT-FORMAT.md).
 
 ## Kernel
 
-O kernel e infra transversal por lado (auth, db, config, app-shell, design-system). Existe um kernel para o backend e um para o frontend.
+The kernel is cross-cutting infra per side (auth, db, config, app-shell, design-system). There is one kernel for the backend and one for the frontend.
 
-A regra de ouro: comportamento importa do kernel, o kernel nunca importa de comportamento. E comportamento nunca importa de comportamento.
+The golden rule: a behavior imports from the kernel, the kernel never imports from a behavior. And a behavior never imports from a behavior.
 
-Regra de negocio compartilhada nao vira codigo de kernel: vira dado no bloco `rules` do contrato, e cada lado implementa. Um teste bilateral mantem os dois honestos.
+A shared business rule does not become kernel code: it becomes data in the contract's `rules` block, and each side implements it. A bilateral test keeps both honest.
 
-Criterios de promocao ao kernel, regra do tres, anti-inchaco, dono por submodulo e enforcement de direcao de import estao em [KERNEL.md](./KERNEL.md).
+Promotion criteria to the kernel, the rule of three, anti-bloat, ownership per submodule, and import-direction enforcement are in [KERNEL.md](./KERNEL.md).
 
-## Validador
+## Validator
 
-O template traz um validador minimo: `./bpt validate` (implementado em `tools/bpt/validate.py`, Python 3 mais PyYAML). O tooling e swappable e nao e a stack do app.
+The template ships a minimal validator: `./bpt validate` (implemented in `tools/bpt/validate.py`, Python 3 plus PyYAML). The tooling is swappable and is not the app's stack.
 
-Ele roda 7 invariantes:
+It runs 7 invariants:
 
-1. schema presente e suportado (`bpt/v1`);
-2. id unico e no formato `dominio.acao`;
-3. `sides` nao vazio e cada lado existe na config;
-4. refs de `deps` e `consumes` existem, sem auto-dependencia, grafo aciclico (Kahn aponta o ciclo);
-5. no two-sided tem contrato, no one-sided tem `contract: none`;
-6. nenhum id sob pasta de kernel (o dominio `kernel` e reservado);
-7. o trio de arquivos existe (contract, spec e a pasta por lado).
+1. schema present and supported (`bpt/v1`);
+2. unique id in `domain.action` format;
+3. `sides` not empty and each side exists in the config;
+4. `deps` and `consumes` refs exist, no self-dependency, acyclic graph (Kahn points out the cycle);
+5. a two-sided node has a contract, a one-sided node has `contract: none`;
+6. no id under a kernel folder (the `kernel` domain is reserved);
+7. the file trio exists (contract, spec, and the folder per side).
 
-O nucleo tambem deriva as ondas de paralelismo por ordem topologica.
+The core also derives the parallelism waves by topological order.
 
 ## Adapter
 
-O adapter e um executavel declarado no `bpt.config.yaml`. Protocolo neutro: `bpt-adapter <hook>` le um JSON de stdin, escreve um JSON em stdout, logs em stderr. Exit 0 significa que rodou (o status vai no payload), exit diferente de 0 significa que o adapter quebrou.
+The adapter is an executable declared in `bpt.config.yaml`. Neutral protocol: `bpt-adapter <hook>` reads a JSON from stdin, writes a JSON to stdout, logs to stderr. Exit 0 means it ran (the status is in the payload), a nonzero exit means the adapter broke.
 
-Sao 6 hooks: `scaffold`, `plan`, `execute`, `verify`, `review`, `codegen`. O placeholder do template so faz `scaffold` de verdade; os outros retornam status ok vazio.
+There are 6 hooks: `scaffold`, `plan`, `execute`, `verify`, `review`, `codegen`. The template's placeholder only does `scaffold` for real; the others return an empty ok status.
 
-O protocolo completo, a orquestracao (worktree por no-por-lado, ondas do DAG, loop com ate 3 tentativas, teste bilateral, modo yolo) esta em [ADAPTER.md](./ADAPTER.md).
+The full protocol and the orchestration (a worktree per node-per-side, DAG waves, a loop with up to 3 attempts, the bilateral test, yolo mode) are in [ADAPTER.md](./ADAPTER.md).
 
-## Testes
+## Tests
 
-Tres camadas:
+Three layers:
 
-- Cenario: testa comportamento observavel (contrato mais superficie), mora na `spec.md`, sobrevive a refactor, nunca cita nome de funcao ou tabela.
-- Unitario: testa os internals (o como), mora ao lado do codigo, muda com o codigo.
-- Fluxo/e2e: jornada atravessando N comportamentos, mora em `packages/contracts/_flows/<prd>/`, dono no nivel do PRD.
+- Scenario: tests observable behavior (contract plus surface), lives in the `spec.md`, survives a refactor, never names a function or a table.
+- Unit: tests the internals (the how), lives next to the code, changes with the code.
+- Flow/e2e: a journey crossing N behaviors, lives in `packages/contracts/_flows/<prd>/`, owned at the PRD level.
 
-O `entao` do cenario e projetado por superficie: o `verify` do backend roda o contrato, o do frontend roda a tela. Revisao semantica e o portao depois do verde. Detalhe em [TESTING.md](./TESTING.md).
+The scenario's `then` is projected per surface: the backend `verify` runs the contract, the frontend one runs the screen. Semantic review is the gate after green. Detail in [TESTING.md](./TESTING.md).
 
-## Exemplos avancados
+## Advanced examples
 
-Estes exemplos documentam formas suportadas. Eles nao estao no `bpt.config.yaml` vivo, que so tem os dois nos reais.
+These examples document supported forms. They are not in the live `bpt.config.yaml`, which only has the two real nodes.
 
-### No one-sided
+### One-sided node
 
-Um comportamento pode existir em um lado so. Ele nao tem contrato proprio, consome o de outro:
+A behavior can exist on a single side. It has no contract of its own, it consumes another's:
 
 ```yaml
-catalogo.filtrar:
+catalog.filter:
   sides: [frontend]
   contract: none
-  consumes: [produto.listar]
-  deps: [produto.listar]
+  consumes: [product.list]
+  deps: [product.list]
 ```
 
-### N:M via consumes
+### N:M through consumes
 
-Uma tela composta consome N contratos declarando `consumes: [...]`. E um mesmo contrato pode servir N telas. O espelho e N:M, nao 1:1.
+A composite screen consumes N contracts by declaring `consumes: [...]`. And the same contract can serve N screens. The mirror is N:M, not 1:1.
 
-### Deps por lado
+### Per-side deps
 
-Quando o grafo de dependencias diverge entre os lados, `deps` vira um mapa por lado:
+When the dependency graph diverges between the sides, `deps` becomes a per-side map:
 
 ```yaml
-checkout.pagar:
+checkout.pay:
   sides: [backend, frontend]
   deps:
-    backend:  [pagamento.cartao.autorizar]
-    frontend: [carrinho.revisar]
+    backend:  [payment.card.authorize]
+    frontend: [cart.review]
   prd: checkout-v1
 ```
 
 ### PRD
 
-Um no pode declarar `prd` para amarrar comportamentos a uma unidade de produto. Os testes de fluxo/e2e sao donos no nivel do PRD, sob `packages/contracts/_flows/<prd>/`.
+A node can declare `prd` to tie behaviors to a product unit. The flow/e2e tests are owned at the PRD level, under `packages/contracts/_flows/<prd>/`.
 
-### Superficies genericas
+### Generic surfaces
 
-`sides` e uma lista aberta e a superficie de cada lado pode ser: `tela`, `comando-cli`, `endpoint`, `job` ou `evento`. Uma aplicacao de CLI, por exemplo, usaria `sides: [cli]`.
+`sides` is an open list and each side's surface can be: `screen`, `cli-command`, `endpoint`, `job`, or `event`. A CLI application, for example, would use `sides: [cli]`.
 
-## Idioma
+## Language
 
-Idioma hibrido. As chaves estruturais de schema ficam em ingles (`kind`, `input`, `output`, `errors`, `sides`, `deps`, `rules`, e assim por diante). O vocabulario de dominio e os ids ficam em portugues (`produto.listar`, `busca`, `preco`, `PARAMETRO_INVALIDO`).
+BPT uses English throughout. Structural schema keys are fixed BPT vocabulary (`kind`, `input`, `output`, `errors`, `sides`, `deps`, `rules`, and so on). The domain vocabulary and the ids describe the product (`product.list`, `search`, `price`, `INVALID_PARAMETER`).
 
-## Fora de escopo (v1)
+## Out of scope (v1)
 
-O que fica de fora do v1, citado aqui como futuro:
+What stays out of v1, mentioned here as future work:
 
-- JSON Schema mais `$ref` mais codegen rico;
-- hash canonico e registro central de contratos;
-- semver mais convivencia N/N-1 mais expand/contract;
-- kinds `event` e `stream`;
-- property e mutation tests no config;
-- orquestracao real (paralelismo, retries, yolo, PR-por-PRD, tracking de deploy);
-- observabilidade de runtime;
-- comite multi-agente de revisao;
-- guia completo de brownfield/strangler.
+- JSON Schema plus `$ref` plus rich codegen;
+- canonical hash and central contract registry;
+- semver plus N/N-1 coexistence plus expand/contract;
+- `event` and `stream` kinds;
+- property and mutation tests in the config;
+- real orchestration (parallelism, retries, yolo, PR-per-PRD, deploy tracking);
+- runtime observability;
+- multi-agent review committee;
+- full brownfield/strangler guide.

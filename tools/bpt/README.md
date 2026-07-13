@@ -1,35 +1,35 @@
-# Validador BPT
+# BPT Validator
 
-`tools/bpt/validate.py` e o validador de referencia do template. Ele e **tooling**, nao a stack do app: existe para checar a arvore e derivar as ondas de paralelismo, e pode ser trocado por qualquer implementacao equivalente sem afetar o codigo de producao.
+`tools/bpt/validate.py` is the reference validator for the template. It is **tooling**, not the app stack: it exists to check the tree and derive the parallelism waves, and it can be swapped for any equivalent implementation without affecting production code.
 
-## Uso
+## Usage
 
 ```
 ./bpt validate
 ```
 
-O comando le o `bpt.config.yaml` da raiz mais os contratos e specs, roda as 7 invariantes e, no final, imprime as ondas de paralelismo.
+The command reads the root `bpt.config.yaml` plus the contracts and specs, runs the 7 invariants, and finally prints the parallelism waves.
 
-## Dependencia
+## Dependency
 
-Dependencia unica: **PyYAML**.
+Single dependency: **PyYAML**.
 
 ```
 pip install pyyaml
 ```
 
-Python 3 + PyYAML e proposital: e um tooling leve e trocavel, deliberadamente desacoplado da linguagem, do framework e do runtime do app.
+Python 3 + PyYAML is intentional: it is lightweight, swappable tooling, deliberately decoupled from the app's language, framework, and runtime.
 
-## As 7 invariantes
+## The 7 invariants
 
-1. Schema presente e suportado (`bpt/v1`).
-2. Cada `id` e unico e segue o formato `dominio.acao`.
-3. `sides` nao e vazio e cada lado declarado existe.
-4. Refs de `deps`/`consumes` existem, sem auto-dependencia, e o grafo e aciclico (Kahn aponta o ciclo).
-5. No two-sided tem contrato; no one-sided declara `contract: none`.
-6. Nenhum `id` mora sob pasta de kernel (o dominio `kernel` e reservado).
-7. Trio de arquivos existe: `contract.yaml` + `spec.md` + a pasta do no por lado.
+1. Schema present and supported (`bpt/v1`).
+2. Each `id` is unique and follows the `domain.action` format.
+3. `sides` is not empty and every declared side exists.
+4. `deps`/`consumes` refs exist, with no self-dependency, and the graph is acyclic (Kahn points to the cycle).
+5. Every two-sided node has a contract; every one-sided node declares `contract: none`.
+6. No `id` lives under a kernel folder (the `kernel` domain is reserved).
+7. The file trio exists: `contract.yaml` + `spec.md` + the node's folder per side.
 
-## Ondas de paralelismo
+## Parallelism waves
 
-Alem de validar, o nucleo deriva as **ondas** por ordem topologica do grafo de dependencias e as imprime. Cada onda e o conjunto de nos que podem ser construidos em paralelo naquele passo, com as ondas de kernel primeiro. E o mapa que o adapter usa para paralelizar o trabalho respeitando o DAG.
+Beyond validating, the core derives the **waves** by topological order of the dependency graph and prints them. Each wave is the set of nodes that can be built in parallel at that step, with the kernel waves first. It is the map the adapter uses to parallelize the work while respecting the DAG.

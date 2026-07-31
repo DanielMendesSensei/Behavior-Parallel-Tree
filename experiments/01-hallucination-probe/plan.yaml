@@ -3,7 +3,20 @@
 # Fixed before the first run. Changing anything here after runs exist invalidates
 # those runs: bump `revision` and start a new runs directory instead of editing in
 # place, so git keeps both readings.
-revision: 1
+#
+# revision 2. Revision 1 ran 14 times and was voided, with its output kept in
+# runs-void-r1/. The default system prompt tells the model it is an agent with
+# tools in a repository, so instead of answering it tried to CREATE the file, hit
+# the disabled tool, and stopped. Four of five Sonnet runs and one of five Opus
+# runs produced no artifact at all. That failure is not random: Sonnet stalls more
+# than Opus, so the surviving sample was biased toward one model. A contaminant
+# that deletes runs unevenly is not the mild one the pre-registration allowed for.
+#
+# The fix removes the cause rather than the symptom: a neutral system prompt
+# replaces the agentic one, and each prompt asks for the file inline. Neither says
+# anything about format or field names, so the probe still measures what it was
+# built to measure.
+revision: 2
 experiment: 01-hallucination-probe
 runs_dir: runs
 
@@ -19,10 +32,11 @@ cells:
   - { name: z-contamination, prompt: prompts/z-contamination.md, n: 2 }
 
 # The isolation is the experiment. --safe-mode drops CLAUDE.md, skills, hooks,
-# plugins and MCP; --tools "" leaves the model with nothing to read; the runner
-# additionally executes in a fresh empty directory so there is no repository to
-# find. What survives is the default agentic system prompt, which is constant
-# across every cell and cannot explain a difference between them.
+# plugins and MCP; --tools "" leaves the model with nothing to read; --system-prompt
+# replaces the agentic frame with a neutral one; the runner executes in a fresh
+# empty directory so there is no repository to find. Verified, not assumed:
+# num_turns is 1 on every record and leftover_files is empty, so nothing ran and
+# nothing was written.
 executor:
   command: claude
   args:
@@ -37,5 +51,10 @@ executor:
     - json
     - --model
     - "{model}"
+    - --system-prompt
+    - >-
+      You are answering a technical design question. You have no tools, no file
+      system and no repository: everything you produce must appear in your reply
+      as text.
   prompt_via: stdin
   timeout_s: 420

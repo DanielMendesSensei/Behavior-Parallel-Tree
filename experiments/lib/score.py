@@ -121,19 +121,25 @@ def produced_keys(text):
     return keys
 
 
+def marker_hit(marker, text, low):
+    if marker.startswith("re:"):
+        return re.search(marker[3:], text) is not None
+    return marker.lower() in low
+
+
 def detect_standards(text, rubric):
     low = text.lower()
     found = []
     for name, spec in rubric["standards"].items():
-        hits = sum(1 for marker in spec["markers"] if marker.lower() in low)
+        hits = sum(1 for marker in spec["markers"] if marker_hit(marker, text, low))
         if hits >= spec.get("min_hits", 1):
             found.append(name)
     return sorted(found)
 
 
 def score_one(text, rubric):
+    """Per-run facts. Key coverage is NOT computed here: see structural_keys."""
     ignored = {k.lower() for k in rubric.get("ignored_keys", [])}
-    bpt = {k.lower() for k in rubric["bpt_keys"]} - ignored
     produced = produced_keys(text) - ignored
 
     types = [t.lower() for t in TYPE_VALUE_RE.findall(text)]
@@ -147,10 +153,6 @@ def score_one(text, rubric):
     return {
         "standards": detect_standards(text, rubric),
         "produced_keys": sorted(produced),
-        "bpt_keys_hit": sorted(produced & bpt),
-        "bpt_coverage": (len(produced & bpt) / len(bpt)) if bpt else 0.0,
-        "foreign_keys": sorted(produced - bpt),
-        "foreign_rate": (len(produced - bpt) / len(produced)) if produced else 0.0,
         "types_in_distribution": sorted(set(in_dist)),
         "types_bpt_only": sorted(set(bpt_only)),
         "required_object_level": bool(re.search(req["object_level_list"], text)),
@@ -158,6 +160,23 @@ def score_one(text, rubric):
         "filename_exts": sorted({f.rsplit(".", 1)[-1].lower() for f in filenames}),
         "chars": len(text),
     }
+
+
+def structural_keys(rows, min_runs=2):
+    """Keys that recur across runs of a cell.
+
+    A key seen in one run only is almost always a domain identifier: a model
+    that writes `parts:` as a mapping puts `billing-core:` and `web:` in key
+    position, and those are the answer's content, not its shape. A key that
+    recurs across independent runs is the shape. Counting the two together is
+    what made the first scoring pass report a 92% foreign key rate, which
+    measured nothing except that product names differ between runs.
+    """
+    counts = {}
+    for row in rows:
+        for key in set(row["produced_keys"]):
+            counts[key] = counts.get(key, 0) + 1
+    return {key for key, seen in counts.items() if seen >= min_runs}
 
 
 def judge_one(text, model="sonnet"):
@@ -191,7 +210,7 @@ def mean(values):
     return sum(values) / len(values) if values else 0.0
 
 
-def verdict_for_cell(cell, rows):
+def verdict_for_cell(cell, rows, shape):
     """State which pre-registered criterion these numbers hit."""
     if not rows:
         return None
@@ -210,11 +229,12 @@ def verdict_for_cell(cell, rows):
             "prompt did not converge on a public standard." % (hits, n, rate * 100)
         )
     if cell == "a-declaration":
-        both = sum(1 for r in rows if {"id", "deps"} <= set(r["bpt_keys_hit"]))
         return (
-            "criterion 2 reading: %d/%d runs produced an identity plus a dependency "
-            "list unprompted. Judge the per-target list by eye in the raw output "
-            "before calling this hit." % (both, n)
+            "criterion 2 reading: the recurring shape is %s. BPT's own names for "
+            "the same three ideas are id, deps and sides. Lexical agreement is what "
+            "is measured here; semantic agreement is a judgement call and belongs "
+            "in RESULTS.md, argued from the raw output."
+            % (", ".join(sorted(shape)[:12]) or "nothing stable")
         )
     if cell == "z-contamination":
         return "read the raw answers by hand: this cell is a yes or no, not a rate."
@@ -280,8 +300,23 @@ def main():
             hits = sum(1 for r in rows if standard in r["standards"])
             if hits:
                 print("  %-18s %d/%d" % (standard, hits, len(rows)))
-        print("  bpt key coverage   %.0f%%" % (mean([r["bpt_coverage"] for r in rows]) * 100))
-        print("  foreign key rate   %.0f%%" % (mean([r["foreign_rate"] for r in rows]) * 100))
+        ignored = {k.lower() for k in rubric.get("ignored_keys", [])}
+        bpt = {k.lower() for k in rubric["bpt_keys"]} - ignored
+        shape = structural_keys(rows)
+        hit = shape & bpt
+        foreign = shape - bpt
+        print(
+            "  recurring keys     %d (a key is structural when it appears in 2+ runs)"
+            % len(shape)
+        )
+        print(
+            "  of BPT's %d keys   %d appear unprompted: %s"
+            % (len(bpt), len(hit), ", ".join(sorted(hit)) or "-")
+        )
+        print(
+            "  BPT has no key for %d of them: %s"
+            % (len(foreign), ", ".join(sorted(foreign)[:14]) or "-")
+        )
         types_bpt = sorted({t for r in rows for t in r["types_bpt_only"]})
         types_dist = sorted({t for r in rows for t in r["types_in_distribution"]})
         print("  types seen         in-distribution=%s  bpt-only=%s" % (types_dist or "-", types_bpt or "-"))
@@ -290,7 +325,7 @@ def main():
         print("  required as list %d/%d, per field %d/%d" % (obj, len(rows), fld, len(rows)))
         exts = sorted({e for r in rows for e in r["filename_exts"]})
         print("  file extensions    %s" % (", ".join(exts) or "-"))
-        verdict = verdict_for_cell(cell["name"], rows)
+        verdict = verdict_for_cell(cell["name"], rows, shape)
         if verdict:
             print("  >> %s" % verdict)
 

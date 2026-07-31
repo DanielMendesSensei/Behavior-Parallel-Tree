@@ -18,3 +18,5 @@ name, where the caller must be signed in.
 Choose the format and the field names yourself.
 
 After the file, in no more than four sentences, say why you chose that format.
+
+Write the complete file inline in your reply, inside a fenced code block.

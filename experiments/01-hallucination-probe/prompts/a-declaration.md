@@ -17,3 +17,5 @@ three parts, where one part depends on another, and one part is present in only 
 applications.
 
 After the file, in no more than four sentences, say why you chose that format.
+
+Write the complete file inline in your reply, inside a fenced code block.

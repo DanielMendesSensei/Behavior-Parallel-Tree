@@ -58,13 +58,28 @@ agent, and a model learns from examples in context.
    in any training set. Confirm it anyway: ask each model, in a clean session, whether it knows
    "Behavior Parallel Tree", and record the answer in `RESULTS.md`.
 
-### Known limitation, stated up front
+### The limitation that was underestimated, and what it cost
 
-`--safe-mode` removes user customisation but keeps the default agentic system prompt. That
-prompt is a constant across every cell and every arm, so it cannot explain a difference
-between arms. For experiment 01 it is a mild contaminant on the absolute numbers, and it is
-also the environment the architecture would actually be used in, which is the environment
-worth measuring.
+This section originally said that keeping the default agentic system prompt was a mild
+contaminant, constant across cells, and therefore harmless. That was wrong, and the first 14
+runs are what proved it. They are kept, voided, in `01-hallucination-probe/runs-void-r1/`.
+
+The agentic prompt tells the model it is working in a repository with tools. So instead of
+answering the question, it tried to create the file, reached for the disabled Write tool, and
+stopped. Four of five Sonnet runs and one of five Opus runs came back with no artifact at all,
+just an intention to write one. A contaminant that silently deletes runs, and deletes more of
+one model's runs than the other's, is not a constant: it biases the surviving sample.
+
+Revision 2 removes the cause. A neutral system prompt replaces the agentic one, and each
+prompt asks for the file inline. Neither change mentions a format or a field name, so the
+probe still measures the thing it was built to measure. The isolation itself was checked
+rather than assumed: every record carries `num_turns` and the contents of its working
+directory, and across all 14 voided runs the turn count was 1 and the directory stayed empty,
+which is how we know nothing executed.
+
+The general lesson goes in `RESULTS.md` too, because it is the more useful finding: an
+experiment whose failure mode is an empty answer will quietly shrink its own sample, and only
+reading the raw output catches it. The summary table looked perfectly healthy.
 
 `codex` is not installed on this machine, so the cross-family axis of experiment 01 runs
 against two Claude models instead of two vendors. The runner takes an arbitrary command

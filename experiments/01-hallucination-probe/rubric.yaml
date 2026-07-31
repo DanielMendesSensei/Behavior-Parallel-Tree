@@ -1,10 +1,22 @@
-# Scoring rubric for experiment 01. Fixed before the first run.
+# Scoring rubric for experiment 01.
 #
-# Every detector here is literal and case insensitive, so two people reading the
-# same output get the same score. Anything that needs judgement is deliberately
-# left out of this file and handled by the independent model pass in score.py,
-# whose disagreement with this file is itself reported.
-revision: 1
+# Every detector here is mechanical, so two people reading the same output get
+# the same score. Anything that needs judgement is deliberately left out of this
+# file and handled by the independent model pass in score.py, whose disagreement
+# with this file is itself reported.
+#
+# A marker is a case insensitive substring, or a regular expression when it is
+# written as `re:<pattern>`. Regex markers exist because the weak markers of the
+# first revision fired on ordinary English.
+#
+# revision 2, after the first four runs and before any result was declared.
+# Revision 1 detected Gherkin in a plain YAML answer, because its markers
+# included the bare words "given", "when" and "then", which appear in normal
+# prose. Prose is not Gherkin. The weak markers are gone and the remaining ones
+# are anchored to line starts. The pre-registration says a bad rubric gets fixed
+# and everything gets re-scored, and that is what happened here: no output was
+# re-read and no criterion was touched.
+revision: 2
 
 # A standard counts as detected when at least `min_hits` of its distinct markers
 # appear. min_hits is 2 wherever a single marker would be a plausible accident.
@@ -14,19 +26,19 @@ standards:
     markers: ["$schema", "$ref", "json schema", "jsonschema", "draft-07", "2020-12"]
   openapi:
     min_hits: 2
-    markers: ["openapi", "swagger", "requestbody", "operationid", "components:", "paths:"]
+    markers: ["openapi", "swagger", "requestbody", "operationid", "re:(?im)^\\s*paths\\s*:", "re:(?im)^\\s*components\\s*:"]
   typespec:
     min_hits: 1
     markers: ["typespec", ".tsp", "@service("]
   protobuf:
     min_hits: 2
-    markers: ["proto3", ".proto", "syntax =", "message ", "rpc "]
+    markers: ["proto3", ".proto", "re:(?m)^\\s*syntax\\s*=", "re:(?m)^\\s*message\\s+\\w+\\s*\\{", "re:(?m)^\\s*rpc\\s+\\w+"]
   graphql:
-    min_hits: 2
-    markers: ["graphql", "type query", "schema {", ".graphql"]
+    min_hits: 1
+    markers: ["graphql", "re:(?m)^\\s*type\\s+Query\\s*\\{", ".graphql"]
   gherkin:
-    min_hits: 2
-    markers: ["feature:", "scenario:", "given ", "when ", "then ", ".feature", "cucumber"]
+    min_hits: 1
+    markers: ["cucumber", "gherkin", ".feature", "re:(?im)^\\s*feature\\s*:", "re:(?im)^\\s*scenario( outline)?\\s*:"]
   asyncapi:
     min_hits: 1
     markers: ["asyncapi"]

@@ -14,3 +14,5 @@ verified against this single file. There must not be one copy per implementation
 Write that file. Choose the format yourself.
 
 After the file, in no more than four sentences, say why you chose that format.
+
+Write the complete file inline in your reply, inside a fenced code block.

@@ -1,0 +1,124 @@
+# Scoring rubric for experiment 01. Fixed before the first run.
+#
+# Every detector here is literal and case insensitive, so two people reading the
+# same output get the same score. Anything that needs judgement is deliberately
+# left out of this file and handled by the independent model pass in score.py,
+# whose disagreement with this file is itself reported.
+revision: 1
+
+# A standard counts as detected when at least `min_hits` of its distinct markers
+# appear. min_hits is 2 wherever a single marker would be a plausible accident.
+standards:
+  json-schema:
+    min_hits: 1
+    markers: ["$schema", "$ref", "json schema", "jsonschema", "draft-07", "2020-12"]
+  openapi:
+    min_hits: 2
+    markers: ["openapi", "swagger", "requestbody", "operationid", "components:", "paths:"]
+  typespec:
+    min_hits: 1
+    markers: ["typespec", ".tsp", "@service("]
+  protobuf:
+    min_hits: 2
+    markers: ["proto3", ".proto", "syntax =", "message ", "rpc "]
+  graphql:
+    min_hits: 2
+    markers: ["graphql", "type query", "schema {", ".graphql"]
+  gherkin:
+    min_hits: 2
+    markers: ["feature:", "scenario:", "given ", "when ", "then ", ".feature", "cucumber"]
+  asyncapi:
+    min_hits: 1
+    markers: ["asyncapi"]
+  smithy:
+    min_hits: 1
+    markers: ["smithy"]
+  avro:
+    min_hits: 2
+    markers: ["avro", "\"namespace\"", "\"fields\""]
+  openrpc:
+    min_hits: 1
+    markers: ["openrpc"]
+  nx:
+    min_hits: 1
+    markers: ["nx.json", "project.json", "@nx/", "nx workspace"]
+  turborepo:
+    min_hits: 1
+    markers: ["turbo.json", "turborepo"]
+  pnpm-workspace:
+    min_hits: 1
+    markers: ["pnpm-workspace"]
+  lerna:
+    min_hits: 1
+    markers: ["lerna.json"]
+  bazel:
+    min_hits: 1
+    markers: ["bazel", "build.bazel", "workspace.bzl"]
+  cargo-workspace:
+    min_hits: 1
+    markers: ["[workspace]"]
+
+# The keys BPT defines. Coverage is measured in both directions: how many of
+# these the model produced on its own, and how much of what it produced BPT has
+# no key for.
+bpt_keys:
+  - id
+  - kind
+  - deps
+  - consumes
+  - sides
+  - input
+  - output
+  - rules
+  - errors
+  - version
+  - title
+  - authorization
+  - roles
+  - surfaces
+  - contract
+  - prd
+  - schema
+  - project
+  - nodes
+  - code
+  - category
+  - retryable
+  - when
+
+# Keys so generic that finding them proves nothing about shape agreement. They
+# are excluded from both directions of the coverage metric.
+ignored_keys:
+  - type
+  - description
+  - name
+  - required
+  - default
+  - properties
+  - items
+  - format
+  - example
+  - examples
+  - enum
+  - minimum
+  - maximum
+  - min
+  - max
+
+# The type vocabulary question. BPT invented four of these and the distribution
+# has seven others. Detected as the value of a `type` key.
+type_vocabulary:
+  in_distribution: [string, number, integer, boolean, array, object, "null"]
+  bpt_only: [text, money, list, decimal]
+
+# BPT puts `required` on the field and defaults it to true. JSON Schema puts it
+# on the object as a list and defaults it to absent. That inversion sits on one
+# of the highest frequency patterns in the whole distribution, which is why it
+# gets its own detector.
+required_convention:
+  object_level_list: '(?im)^\s*"?required"?\s*:\s*(\[|$)'
+  per_field_flag: '(?i)"?required"?\s*:\s*(true|false)'
+
+# Filenames the model proposes, harvested to see what it thinks the artifact is
+# called.
+filename_pattern: '(?i)\b[\w.\-/]+\.(ya?ml|json|md|toml|proto|tsp|graphql|feature|ts|py|cue)\b'

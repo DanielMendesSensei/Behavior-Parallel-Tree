@@ -1,0 +1,41 @@
+# Experiment 01: hallucination probe.
+#
+# Fixed before the first run. Changing anything here after runs exist invalidates
+# those runs: bump `revision` and start a new runs directory instead of editing in
+# place, so git keeps both readings.
+revision: 1
+experiment: 01-hallucination-probe
+runs_dir: runs
+
+# 5 per cell detects a large effect and nothing smaller, which is the right trade
+# for a decision this size. z-contamination only needs to answer yes or no.
+n: 5
+models: [opus, sonnet]
+
+cells:
+  - { name: a-declaration,   prompt: prompts/a-declaration.md }
+  - { name: b-contract,      prompt: prompts/b-contract.md }
+  - { name: c-spec,          prompt: prompts/c-spec.md }
+  - { name: z-contamination, prompt: prompts/z-contamination.md, n: 2 }
+
+# The isolation is the experiment. --safe-mode drops CLAUDE.md, skills, hooks,
+# plugins and MCP; --tools "" leaves the model with nothing to read; the runner
+# additionally executes in a fresh empty directory so there is no repository to
+# find. What survives is the default agentic system prompt, which is constant
+# across every cell and cannot explain a difference between them.
+executor:
+  command: claude
+  args:
+    - -p
+    - --safe-mode
+    - --tools
+    - ""
+    - --strict-mcp-config
+    - --disable-slash-commands
+    - --no-session-persistence
+    - --output-format
+    - json
+    - --model
+    - "{model}"
+  prompt_via: stdin
+  timeout_s: 420

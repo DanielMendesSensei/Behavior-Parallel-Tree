@@ -1,19 +1,18 @@
 # BPT: Behavior Parallel Tree
 
-BPT is two mirrored trees of behaviors, where each behavior is an isolated island that an agent builds in parallel, because the tree declares nodes, dependencies, and the neutral contract that links backend and frontend, with a single goal: to minimize the context needed to make a change.
+**An architecture for codebases that coding agents work on in parallel.**
 
-This repository is a template. The idea is to clone it for each new project, delete the two example nodes, and start declaring your own behaviors. The core is stack-agnostic: it knows nothing about language, framework, or runtime. The one that does the real work is an adapter, chosen per project.
+Ask an agent to change one behavior of your app and it loads half the repo to find out what it may touch. Ask three agents to work at once and they collide, because nothing in a folder-per-feature layout says which pieces are independent. BPT fixes both by making the boundaries declared, checkable and machine-readable:
 
-## Clone and go
-
-Prerequisites: just Python 3 with PyYAML, and only for the tooling validator. This is not your app's stack: it is the tool that checks whether the tree is coherent.
+- **Every behavior is an island.** A behavior may import from its side's kernel and read the contracts it declares. Behavior to behavior imports are forbidden, and the rule is enforced, not just documented.
+- **One neutral contract joins the sides.** The same behavior exists on backend and on frontend (or on any sides you declare), with one contract and one spec for all of them, never a copy per side.
+- **The dependency graph is data.** One command reads the tree and derives the parallelism waves: which behaviors can be built at the same time, and which have to wait.
+- **The context per change is bounded on purpose.** An agent building a behavior loads the node's folder, its own contract, the contracts it consumes, and the kernel read-only. Nothing else.
 
 ```bash
 pip install pyyaml
 ./bpt validate
 ```
-
-Expected output: the validator derives the parallelism waves (the topological order the adapter will walk through) and confirms the 7 invariants.
 
 ```
 bpt validate: /path/to/project
@@ -24,11 +23,38 @@ parallelism waves (the adapter walks in this order):
 ok: bpt.config.yaml and the tree passed the 7 invariants (0 warning(s))
 ```
 
+That output is the whole idea in one screen: two behaviors, mirrored across two sides, and the order they can be built in, derived rather than maintained by hand.
+
+## Who this is for
+
+Teams and solo builders who are handing implementation work to coding agents and want the boundaries to be a property of the repository instead of a paragraph in a prompt. It is equally useful without agents, as a way to keep features from growing into each other, but the parallelism and the context budget are the reasons it exists.
+
+## Why not just organize by feature
+
+Folder-per-feature gets you naming. It does not get you:
+
+| | folder per feature | BPT |
+|---|---|---|
+| Cross-feature imports | nothing stops them | forbidden by rule, checkable by the adapter's `verify` |
+| Machine-readable dependency graph | none, so no parallelism can be derived | `deps` and `consumes` per node, waves derived by one command |
+| Spec per side | duplicated, and the copies drift | one neutral contract plus one spec for N sides |
+| Rule for what goes in shared code | taste | the rule of three, plus a promotion gate for the kernel |
+
+## Clone and go
+
+Prerequisites: Python 3 with PyYAML, and only for the validator. That is tooling, not your app's stack: BPT knows nothing about your language, framework or runtime.
+
+```bash
+pip install pyyaml
+./bpt validate      # checks the 7 invariants and prints the waves
+./bpt help
+```
+
 ## Folder tree
 
 ```
 bpt.config.yaml              single declaration: sides, contracts, and nodes
-bpt                          shortcut for ./bpt validate
+bpt                          the CLI (validate, help)
 apps/
   backend/
     behaviors/               the backend-side nodes (root declared in sides)
@@ -39,34 +65,45 @@ apps/
 packages/
   contracts/                 one contract + one spec per behavior
 adapters/
-  placeholder/               example adapter (only does real scaffolding)
+  placeholder/               reference adapter (only scaffold does real work)
 tools/
   bpt/validate.py            the validator (swappable tooling, not the app's stack)
-docs/                        the rulebook and the contributing guide
+docs/                        the rulebook and the formats
 ```
 
 Inside each node there is `src/` (human code) and `__generated__/` (code materialized by the adapter from the contract). There is no per-node metadata file: the conventional folder plus the entry in `bpt.config.yaml` are already the declaration.
 
-## The example
+## The example that ships
 
-The template ships with 2 real nodes, both mirrored in backend and frontend:
+Two real nodes, both mirrored in backend and frontend:
 
-- `product.list`: no dependencies. Contract in `packages/contracts/product/list/contract.yaml`, spec in `packages/contracts/product/list/spec.md`.
-- `product.detail`: depends on `product.list` (which is why it falls into wave 2). Contract and spec in `packages/contracts/product/detail/`.
+- `product.list`: no dependencies, so it lands in wave 1. Contract and spec in `packages/contracts/product/list/`.
+- `product.detail`: depends on `product.list`, so it lands in wave 2. Contract and spec in `packages/contracts/product/detail/`.
 
-Each node's code lives in `apps/backend/behaviors/product/<action>/` and `apps/frontend/behaviors/product/<action>/`. The spec sits next to the contract, a single one, never duplicated per side.
+Their code lives in `apps/backend/behaviors/product/<action>/` and `apps/frontend/behaviors/product/<action>/`. Delete both when you start declaring your own, and read `docs/ADDING-A-BEHAVIOR.md` for the step by step.
 
 ## Docs
 
-- `docs/RULEBOOK.md`: the stack-agnostic rulebook. Mirrored topology, canonical forms for id and path, neutral contract, kernel, tests, and advanced examples.
-- `docs/CONTRIBUTING.md`: how to add a behavior step by step.
-
-## How to add a behavior
-
-In short: choose the id in the `domain.action` format, create the contract folder plus the spec, declare the node in `bpt.config.yaml` (with `sides` and `deps`), run `./bpt validate`, and let the adapter build. The complete step by step is in `docs/CONTRIBUTING.md`.
+- `docs/RULEBOOK.md`: the rulebook. Mirrored topology, canonical id and path, the neutral contract, the kernel, tests, and the advanced forms (one-sided nodes, per-side deps, grouping by prd).
+- `docs/ADDING-A-BEHAVIOR.md`: how to add the 2nd, the 3rd, the Nth behavior.
+- `docs/NAMING.md`: how to choose an id, and the granularity tests that decide whether something is one behavior or two.
+- `docs/CONTRACT-FORMAT.md` and `docs/SPEC-FORMAT.md`: the two files every behavior owns.
+- `docs/KERNEL.md`: what may live in the kernel, and the promotion rules that keep it small.
+- `docs/ADAPTER.md`: the hook protocol an adapter implements.
+- `docs/TESTING.md`: the three test layers and the bilateral contract test.
+- `docs/MIGRATION.md`: renaming an id, and adopting BPT in an existing codebase.
+- `CONTRIBUTING.md`: how to contribute to BPT itself.
 
 ## About the adapter
 
-The core declares (tree, mirror, contract, spec); the adapter executes (worktrees, parallelism, loop). The adapter included here is a placeholder: it only does real scaffolding (creates the mirrored folders and the stubs from the spec). The remaining hooks return an empty ok status.
+The core declares (tree, mirror, contract, spec) and checks the invariants. The adapter executes, and it is the only component allowed to know your language, framework and runtime. The two talk over a neutral process protocol: one JSON on stdin, one JSON on stdout, per hook, per execution unit.
 
-A real adapter, written for your stack, is what will run `plan`, `execute`, `verify`, `review`, and `codegen`: plan, implement only in the node's folders, run the surface scenarios and check the import direction, review, and materialize the neutral contract into the stack's types and validators.
+The adapter shipped here is a placeholder: `scaffold` does real work (creates the mirrored folders and the stubs from the spec), and the other hooks answer with an empty ok. Writing the real one, for your stack, is the work BPT expects of you: `plan`, `execute` (only inside the node's folders), `verify` (run the spec scenarios and check the import direction), `review`, and `codegen` (materialize the neutral contract into your stack's types and validators). The protocol and the envelope are in `docs/ADAPTER.md`.
+
+## Scope
+
+BPT v1 is deliberately small: a convention, a neutral contract format, a spec format, and a validator that proves the tree is coherent. What it does not include yet, and why, is listed honestly at the end of `docs/RULEBOOK.md`. The `bpt/v1` schema is the contract this template owes you: see `CHANGELOG.md` for how it will change.
+
+## License
+
+MIT. Clone it, fork it, use it in closed source, no obligations beyond keeping the notice.

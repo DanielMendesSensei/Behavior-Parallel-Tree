@@ -104,15 +104,21 @@ Both are written in English. The practical rule is only about which words come f
 
 Example contract showing the boundary:
 
+```yaml
+id: product.list                          # value: your product's word
+kind: query                               # key and value: BPT's words
+input:                                    # key: BPT's word
+  search: { type: text, required: false } # field name yours, keys and type BPT's
+  page:   { type: integer, default: 1 }
+errors:                                   # key: BPT's word
+  - code: INVALID_PARAMETER               # code: your product's word
+    category: validation
+    retryable: false
 ```
-id product.list           # id: your product's word
-kind query                # key: BPT's word
-input:                    # key: BPT's word
-  search text optional    # domain field: your product's word
-  page integer default 1  # domain field: your product's word
-errors:                   # key: BPT's word
-  INVALID_PARAMETER ...    # domain code: your product's word
-```
+
+That is real contract syntax, the same shape `docs/CONTRACT-FORMAT.md`
+specifies and `packages/contracts/product/list/contract.yaml` uses. Copy it
+and it validates.
 
 ## Generic surfaces and sides as an open list
 

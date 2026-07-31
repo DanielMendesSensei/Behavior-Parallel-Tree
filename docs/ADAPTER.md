@@ -12,7 +12,7 @@ The adapter is an executable pointed to in `bpt.config.yaml`:
 adapter: placeholder
 ```
 
-The name resolves to an executable in the template (for example `tools/bpt/adapters/placeholder`). The core invokes that executable once per hook, per execution unit.
+The name resolves to an adapter directory at the root, `adapters/<name>/`, whose executable is declared in `adapters/<name>/adapter.yaml`. For the one shipped here that is `adapters/placeholder/bin/bpt-adapter`. The core invokes that executable once per hook, per execution unit.
 
 ## Execution unit
 

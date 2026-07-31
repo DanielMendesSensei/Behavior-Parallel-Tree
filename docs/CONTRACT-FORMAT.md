@@ -65,7 +65,7 @@ The `input` and `output` fields use only neutral types, with no tie to a stack:
 | `kind` | yes | `query` (reads, does not change state) or `command` (changes state). |
 | `title` | yes | Short human title. |
 | `authorization` | yes | `required` (boolean) and `roles` (list of domain roles). |
-| `input` | yes | Input fields, each with a neutral type and constraints (`min`, `max`, `default`, `optional`). |
+| `input` | yes | Input fields, each with a neutral type and constraints (`min`, `max`, `default`, `required`). A field is required unless it says `required: false`. |
 | `output` | yes | Shape of the result, with nested neutral types. |
 | `rules` | yes | Business rules as data (see below). |
 | `errors` | yes | List of possible errors. |
@@ -75,8 +75,8 @@ The `input` and `output` fields use only neutral types, with no tie to a stack:
 Each error has four attributes:
 
 - `code`: an uppercase identifier (`INVALID_PARAMETER`, `UNAUTHORIZED`).
-- `category`: the error class (`validation`, `user`, and the like).
-- `retryable`: whether it is worth trying again (`retryable` or `non-retryable`).
+- `category`: the error class (`user`, `validation`, `system`).
+- `retryable`: boolean, whether it is worth trying again.
 - `when`: the condition that triggers the error (described in the spec when it needs detail).
 
 ## Shared business rules as DATA
@@ -85,8 +85,10 @@ There is no shared domain package in code. A rule that holds for both sides live
 
 ```yaml
 rules:
-  - ordering: items by name ascending
-  - search-case-insensitive: ignores case
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
 ```
 
 Each side implements the rule in its own code. The honesty of both is guaranteed by the bilateral, consumer-driven contract test: the scenario lives in the spec and runs on each surface during `verify`. The rule is single (the data in the contract), but it has two implementations that must agree.
@@ -123,9 +125,12 @@ Everything is written in English. The structure is universal; the domain belongs
 `packages/contracts/product/list/contract.yaml`:
 
 ```yaml
+# Neutral contract for product.list (the joint between backend and frontend).
+# Pure data, neutral types. No language type, route, or HTTP verb.
+# Structural keys and domain vocabulary are both English.
 id: product.list
-version: 1
-kind: query
+version: 1                 # simple integer in v1 (semver/hash: future)
+kind: query                # query | command  (event/stream: future)
 title: List products
 
 authorization:
@@ -133,43 +138,39 @@ authorization:
   roles: [customer]
 
 input:
-  search:
-    type: text
-    optional: true
-  page:
-    type: integer
-    min: 1
-    default: 1
-  size:
-    type: integer
-    min: 1
-    max: 100
-    default: 20
+  search: { type: text, required: false }
+  page:   { type: integer, min: 1, default: 1 }
+  size:   { type: integer, min: 1, max: 100, default: 20 }
 
 output:
   items:
     type: list
     of:
-      type: object
-      fields:
-        id: text
-        name: text
-        price: money
-        available: boolean
-  total: integer
-  page: integer
+      object:
+        id:        { type: text }
+        name:      { type: text }
+        price:     { type: money }
+        available: { type: boolean }
+  total: { type: integer }
+  page:  { type: integer }
 
+# Shared business rules live here as DATA. Each side implements them
+# from here; the bilateral contract test keeps both sides honest.
 rules:
-  - ordering: items by name ascending
-  - search-case-insensitive: ignores case
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
 
 errors:
   - code: INVALID_PARAMETER
-    category: validation
-    retryable: non-retryable
+    category: validation   # user | validation | system
+    retryable: false
+    when: page or size out of range
   - code: UNAUTHORIZED
     category: user
-    retryable: non-retryable
+    retryable: false
+    when: session missing or expired
 ```
 
 Notice what is **not** here: no language type, no `/products` route, no HTTP verb. The route and the surface type live in the spec, in the `surfaces` block. The contract only says what `product.list` accepts, what it returns, which rules hold for both sides, and how it can fail.

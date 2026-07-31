@@ -1,0 +1,19 @@
+# Python tooling caches (the validator is the only Python here)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local tool state. These have no place in a template someone else clones:
+# they carry machine paths, session ids and whatever your editor or agent
+# tooling keeps between runs. Without the entries below they get committed by
+# accident, which is how a private project's paths end up in a public repo.
+.gstack/
+.serena/
+.superpowers/
+.claude/
+.venv/
+node_modules/
+
+# Editors and OS
+.DS_Store
+*.swp

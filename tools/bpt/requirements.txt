@@ -1,0 +1,4 @@
+# The validator's only dependency. This is tooling, not your app's stack:
+# BPT's core knows no language, framework or runtime, and the checker that
+# proves the tree is coherent should not drag a toolchain in with it.
+pyyaml>=6.0

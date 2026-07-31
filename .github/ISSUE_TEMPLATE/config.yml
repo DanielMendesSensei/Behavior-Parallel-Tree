@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question about using BPT in your project
+    url: https://github.com/DanielMendesSensei/Behavior-Parallel-Tree/discussions
+    about: How to model a behavior, choose an id, or split a node. Start a discussion instead of an issue.

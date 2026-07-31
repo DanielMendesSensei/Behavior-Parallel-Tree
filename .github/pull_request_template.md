@@ -4,8 +4,7 @@
 
 **Checks.**
 
-- [ ] `./bpt validate` exits 0 and prints the waves
-- [ ] `python3 tools/bpt/check_docs.py` is green (no doc cites a path that does not exist)
+- [ ] `./bpt check` is green (the tree validates, the gate still turns red on the refusal cases, and no doc cites a path that does not exist)
 - [ ] The two example nodes (`product.list`, `product.detail`) still work: they are the first thing a newcomer reads
 - [ ] Nothing in `tools/bpt/` or `bpt.config.yaml` learned about a language, framework, package manager or vendor (that knowledge belongs in an adapter)
 

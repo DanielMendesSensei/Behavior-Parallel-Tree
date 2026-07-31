@@ -83,13 +83,18 @@ The `bpt.config.yaml` at the root is the single file that declares all nodes. Ad
 
 ```yaml
 nodes:
-  product.list:
+  - id: product.list
     sides: [backend, frontend]
     deps: []
-  product.detail:
+
+  - id: product.detail
     sides: [backend, frontend]
     deps: [product.list]
 ```
+
+Note the shape: `nodes` is a list of entries and each entry carries its own
+`id`. Writing it as a mapping of id to body is the mistake everyone makes
+once; the validator refuses it with an explicit message.
 
 About `deps`:
 
@@ -98,7 +103,7 @@ About `deps`:
 - When the graph diverges between sides, declare `deps` per side:
 
 ```yaml
-  checkout.pay:
+  - id: checkout.pay
     sides: [backend, frontend]
     deps:
       backend: [payment.card.authorize]
@@ -119,10 +124,11 @@ Not every behavior exists on both sides. A node that only lives on the frontend 
 Example (documentation only, not in the live config):
 
 ```yaml
-  catalog.filter:
+  - id: catalog.filter
     sides: [frontend]
+    contract: none
     deps: [product.list]
-    # contract: none  (declared in the spec; consumes product/list)
+    consumes: [product.list]
 ```
 
 The validator enforces coherence: a two-sided node needs a contract; a one-sided node needs `contract: none`.

@@ -10,6 +10,10 @@ case "$cmd" in
     shift
     exec python3 "$HERE/tools/bpt/validate.py" "$@"
     ;;
+  check)
+    shift
+    exec python3 "$HERE/tools/bpt/check.py" "$@"
+    ;;
   help|--help|-h|"")
     echo "bpt: reference tool for the Behavior Parallel Tree"
     echo ""
@@ -17,6 +21,8 @@ case "$cmd" in
     echo ""
     echo "commands:"
     echo "  validate   validate bpt.config.yaml and the tree (7 invariants)"
+    echo "  check      everything BPT checks about itself: validate, the"
+    echo "             refusal cases, and the docs against the tree"
     echo "  help       show this help"
     echo ""
     echo "to materialize a new behavior, use the adapter (scaffold):"

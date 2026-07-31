@@ -114,9 +114,18 @@ sides:
 contracts:
   root: packages/contracts
 nodes:
-  product.list:   { sides: [backend, frontend], deps: [] }
-  product.detail: { sides: [backend, frontend], deps: [product.list] }
+  - id: product.list
+    sides: [backend, frontend]
+    deps: []
+
+  - id: product.detail
+    sides: [backend, frontend]
+    deps: [product.list]
 ```
+
+`nodes` is a LIST of entries, each carrying its own `id`. A mapping of id to
+body is the shape most people reach for first, and YAML accepts it, so the
+validator refuses it with an explicit message instead of a stack trace.
 
 Naming in short: id in `domain.action`, 2 to 3 segments (prefer 2), lowercase, dot separating segments, hyphen inside a compound segment. The path on disk swaps the dot for a slash. Full rules in [NAMING.md](./NAMING.md).
 
@@ -175,11 +184,12 @@ These examples document supported forms. They are not in the live `bpt.config.ya
 A behavior can exist on a single side. It has no contract of its own, it consumes another's:
 
 ```yaml
-catalog.filter:
-  sides: [frontend]
-  contract: none
-  consumes: [product.list]
-  deps: [product.list]
+nodes:
+  - id: catalog.filter
+    sides: [frontend]
+    contract: none
+    consumes: [product.list]
+    deps: [product.list]
 ```
 
 ### N:M through consumes
@@ -191,12 +201,13 @@ A composite screen consumes N contracts by declaring `consumes: [...]`. And the 
 When the dependency graph diverges between the sides, `deps` becomes a per-side map:
 
 ```yaml
-checkout.pay:
-  sides: [backend, frontend]
-  deps:
-    backend:  [payment.card.authorize]
-    frontend: [cart.review]
-  prd: checkout-v1
+nodes:
+  - id: checkout.pay
+    sides: [backend, frontend]
+    deps:
+      backend:  [payment.card.authorize]
+      frontend: [cart.review]
+    prd: checkout-v1
 ```
 
 ### PRD

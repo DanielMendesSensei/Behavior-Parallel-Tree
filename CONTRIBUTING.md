@@ -8,14 +8,16 @@ Everything BPT needs to check itself is Python 3 with PyYAML. That is tooling, n
 
 ```bash
 pip install pyyaml
-./bpt validate
+./bpt check
 ```
 
-`./bpt validate` must exit 0 and print the parallelism waves. If you changed
-`tools/bpt/validate.py`, also confirm that a deliberately broken config turns the
-gate red: point the validator at a copy of `bpt.config.yaml` with a cycle, a
-duplicated id, or a missing `spec.md`, and check that the message names the
-invariant.
+That is the whole gate, and it is the same command CI runs. It covers three
+things: the tree validates, the gate turns red when an invariant breaks (the
+checker is fed configs it must refuse, because a validator that never fails
+proves nothing), and no doc cites a repository path that does not exist.
+
+If you add an invariant, add its refusal case to `MUST_REFUSE` in
+`tools/bpt/check.py`. A check with no failing case is a check nobody can trust.
 
 ## What a change to BPT has to hold
 

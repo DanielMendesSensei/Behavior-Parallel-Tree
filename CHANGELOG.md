@@ -16,7 +16,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 - `LICENSE` (MIT), so the clone-per-project premise is legally available.
 - `CONTRIBUTING.md` for changing BPT itself, separate from the guide for using it.
 - `CODE_OF_CONDUCT.md`, issue and pull request templates, `.editorconfig`.
-- A CI workflow that runs the validator and asserts that every path quoted in the README and in `docs/` exists on disk, so the docs cannot drift away from the tree unnoticed.
+- `./bpt check`: the whole self-check in one command (the tree validates, the gate turns red on five refusal cases, and no doc cites a path that does not exist). CI runs the same command, so the working copy and CI cannot disagree about what green means.
+- A CI workflow, kept to a single job that calls `./bpt check`.
+- A statement of the hypothesis in the README: what BPT bets, what would confirm it, what would refute it, and which half of it ships here.
 - This changelog, and the schema contract stated above.
 
 ### Changed

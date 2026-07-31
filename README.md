@@ -25,6 +25,18 @@ ok: bpt.config.yaml and the tree passed the 7 invariants (0 warning(s))
 
 That output is the whole idea in one screen: two behaviors, mirrored across two sides, and the order they can be built in, derived rather than maintained by hand.
 
+## The hypothesis
+
+BPT is a bet, not a proven result, and it is worth saying so plainly in the first screen.
+
+**The bet:** when the boundary of a change is declared, checkable and machine-readable, an agent needs less context to make that change correctly, and independent changes can run in parallel without coordination.
+
+**What would confirm it:** the same feature built with and without BPT, comparing tokens spent per change, first-attempt success rate, and how often a change reaches for a file outside its declared island. Those are measurable, and this repository does not measure them yet.
+
+**What would refute it:** if keeping contracts and specs honest costs more than the smaller context saves. Or if agents get good enough at whole-repository reasoning that bounding context stops mattering at all, which would make the parallelism the only remaining argument.
+
+**What ships here is the declaring half:** the convention, the neutral contract, the spec format, and the validator that proves the tree is coherent. The executing half, an adapter that walks the waves and drives agents through them, is deliberately yours to write, because it is the only part that has to know your language and your runtime. The protocol it speaks is in [docs/ADAPTER.md](./docs/ADAPTER.md), and `adapters/placeholder/` is the minimal reference.
+
 ## Who this is for
 
 Teams and solo builders who are handing implementation work to coding agents and want the boundaries to be a property of the repository instead of a paragraph in a prompt. It is equally useful without agents, as a way to keep features from growing into each other, but the parallelism and the context budget are the reasons it exists.
@@ -47,8 +59,15 @@ Prerequisites: Python 3 with PyYAML, and only for the validator. That is tooling
 ```bash
 pip install pyyaml
 ./bpt validate      # checks the 7 invariants and prints the waves
+./bpt check         # everything BPT checks about itself (see below)
 ./bpt help
 ```
+
+`./bpt check` runs three groups: the tree is coherent, the gate turns red when an
+invariant breaks (it feeds the validator configs it must refuse, because a
+validator that never fails proves nothing), and no doc cites a path that does not
+exist. The same three run in CI, but they live in the CLI first: a check you
+cannot run on your own machine is a check you do not trust.
 
 ## Folder tree
 

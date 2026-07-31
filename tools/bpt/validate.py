@@ -154,8 +154,33 @@ def validate(root):
     contracts_root = (cfg.get("contracts", {}) or {}).get("root", "packages/contracts")
     nodes = cfg.get("nodes", []) or []
 
+    # 'nodes' is a LIST of entries, each carrying its own 'id'. A mapping of
+    # id to body is the shape people reach for first, and YAML accepts it
+    # happily, so say what is wrong instead of failing on the first
+    # attribute access.
+    if isinstance(nodes, dict):
+        err(
+            0,
+            "'nodes' is a mapping, but it must be a list of entries, each with "
+            "its own 'id'. Write:\n"
+            "    nodes:\n"
+            "      - id: product.list\n"
+            "        sides: [backend, frontend]\n"
+            "        deps: []\n"
+            "  and not:\n"
+            "    nodes:\n"
+            "      product.list: { sides: [backend, frontend], deps: [] }",
+        )
+        return
+    if not isinstance(nodes, list):
+        err(0, "'nodes' must be a list of entries, found %s" % type(nodes).__name__)
+        return
+
     nodes_by_id = {}
     for node in nodes:
+        if not isinstance(node, dict):
+            err(2, "each entry of 'nodes' must be a map with an 'id', found: %r" % (node,))
+            continue
         nid = node.get("id")
         if not nid:
             err(2, "node without 'id' in nodes")

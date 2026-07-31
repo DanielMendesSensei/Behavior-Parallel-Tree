@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  validate:
-    name: the tree is coherent
+  check:
+    name: bpt checks itself
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,79 +16,8 @@ jobs:
           python-version: '3.12'
       - name: Install the validator's only dependency
         run: python -m pip install --disable-pip-version-check -r tools/bpt/requirements.txt
-      - name: ./bpt validate
-        run: ./bpt validate
-
-  gate-turns-red:
-    name: the gate is red when an invariant breaks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install the validator's only dependency
-        run: python -m pip install --disable-pip-version-check -r tools/bpt/requirements.txt
-      - name: A validator that never fails proves nothing
-        run: |
-          set -u
-          falhas=0
-          checar() {
-            nome="$1"; shift
-            if python3 tools/bpt/validate.py "$1" >/dev/null 2>&1; then
-              echo "::error::$nome: the validator accepted a config it must refuse"
-              falhas=$((falhas + 1))
-            else
-              echo "ok: $nome"
-            fi
-          }
-
-          # nodes as a mapping: the shape people try first
-          rm -rf /tmp/bpt-case && cp -r . /tmp/bpt-case
-          cat > /tmp/bpt-case/bpt.config.yaml <<'YAML'
-          schema: bpt/v1
-          project: case
-          adapter: placeholder
-          sides:
-            backend:  { root: apps/backend/behaviors,  kernel: apps/backend/kernel }
-            frontend: { root: apps/frontend/behaviors, kernel: apps/frontend/kernel }
-          contracts: { root: packages/contracts }
-          nodes:
-            product.list: { sides: [backend, frontend], deps: [] }
-          YAML
-          checar "nodes as a mapping" /tmp/bpt-case
-
-          # a cycle
-          rm -rf /tmp/bpt-cycle && cp -r . /tmp/bpt-cycle
-          cat > /tmp/bpt-cycle/bpt.config.yaml <<'YAML'
-          schema: bpt/v1
-          project: case
-          adapter: placeholder
-          sides:
-            backend:  { root: apps/backend/behaviors,  kernel: apps/backend/kernel }
-            frontend: { root: apps/frontend/behaviors, kernel: apps/frontend/kernel }
-          contracts: { root: packages/contracts }
-          nodes:
-            - id: product.list
-              sides: [backend, frontend]
-              deps: [product.detail]
-            - id: product.detail
-              sides: [backend, frontend]
-              deps: [product.list]
-          YAML
-          checar "a dependency cycle" /tmp/bpt-cycle
-
-          # an unsupported schema
-          rm -rf /tmp/bpt-schema && cp -r . /tmp/bpt-schema
-          sed 's|^schema: bpt/v1|schema: bpt/v99|' bpt.config.yaml > /tmp/bpt-schema/bpt.config.yaml
-          checar "an unsupported schema" /tmp/bpt-schema
-
-          exit $falhas
-
-  docs-match-the-tree:
-    name: every path the docs cite exists
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: A doc that cites a path that does not exist teaches a lie
-        run: python3 tools/bpt/check_docs.py
+      # The same command a contributor runs locally, on purpose: CI and the
+      # working copy must agree on what green means, and the checks must not
+      # be hostage to anyone's build minutes.
+      - name: ./bpt check
+        run: ./bpt check

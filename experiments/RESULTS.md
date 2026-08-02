@@ -125,13 +125,96 @@ model is the intended use, not an exception.
 
 ## Experiment 02: notation penalty
 
-Not run. Experiment 01 leaves it a genuine open question rather than the confirmation the
-pre-registration expected, because the verbosity finding cuts against the notation swap that
-experiment 02 was designed to price. Its arm B should now be the narrower change that
-experiment 01 actually supports: BPT's envelope kept intact, with only the type vocabulary
-moved to the in-distribution seven.
+### What was run
 
-Baseline variance: not measured yet.
+30 runs on 2026-07-31, Sonnet 5 only as pre-registered, 1.68 usd, 0 failures. Three contracts
+carrying identical information for one behaviour, two cells, five runs per arm per cell.
+
+### The `implement` cell: could not measure, and that is the result
+
+| Arm | Scenarios passed, all 5 runs | Output chars, mean (range) | Cost usd, mean (range) |
+| --- | --- | --- | --- |
+| `arm-a-bpt` | 12 of 12, every run | 2,219 (2,071 to 2,299) | 0.0468 (0.0309) |
+| `arm-b-types` | 12 of 12, every run | 1,783 (1,736 to 1,899) | 0.0219 (0.0102) |
+| `arm-c-jsonschema` | 12 of 12, every run | 2,086 (1,713 to 2,318) | 0.0280 (0.0280) |
+
+The primary metric hit the ceiling in all fifteen runs. Within-arm variance is zero, the gap
+between arms is zero, and the pre-registered rule for that case says **could not measure**.
+
+The secondaries do not rescue it. Arm A wrote 436 more characters than arm B on average, and
+the widest within-arm range is 605, so the gap sits inside the noise. Arm A cost roughly twice
+arm B, and that gap also sits inside the widest within-arm range. Both are recorded as noise,
+not as findings, because the baseline was defined before the numbers existed.
+
+**Criterion hit: "all three inside the baseline, could not measure."** The narrow reading is
+that this task was too easy to separate the arms. The wider reading is worth stating too: with
+a specification this precise, the contract's notation did not drive correctness at all. That is
+evidence against the near-miss worry rather than for it.
+
+### The static metric, which is where the surprise is
+
+`price` had to be an exact amount, and every arm said so in the same words in its `rules`
+block. What differed was only whether a type could say it.
+
+| Arm | Implementations using `Decimal` for price |
+| --- | --- |
+| `arm-a-bpt` (`type: money`) | 5 of 5 |
+| `arm-b-types` (`type: string`) | 0 of 5 |
+| `arm-c-jsonschema` (`type: string`) | 0 of 5 |
+
+Neither arm is wrong: each followed its own contract. But BPT's invented `money` type carried
+a semantic into the code that the in-distribution vocabulary lost, and the prose rule did not
+recover it. Arms B and C read "never held in binary floating point" and still returned
+strings.
+
+That is an argument for keeping `money`, produced by an experiment designed to find the
+opposite, and it is the single most useful thing here.
+
+One honest limit on it: arm C's JSON Schema says `type: string` and does not say
+`format: decimal`, which is the in-distribution way to express exactly this. That was my
+mapping choice, so arm C may have lost this metric to my hand rather than to JSON Schema. A
+follow-up would need arm C revised, pre-registered, and re-run.
+
+### The `extend` cell: the near-miss claim is refuted for contracts
+
+Given a contract written in a vocabulary and asked to add two fields to it:
+
+| Arm | What the added fields say | Conformance |
+| --- | --- | --- |
+| `arm-a-bpt` | `minPrice: { type: money }`, `currency: { type: text }` | 5 of 5 |
+| `arm-b-types` | `currency: { type: string }` | 5 of 5 |
+| `arm-c-jsonschema` | `currency: { type: string }`, and correctly added to the `required` array | 5 of 5 |
+
+Not one run reverted to its prior. Handed a file that says `text` and `money`, the model wrote
+`text` and `money`, every time.
+
+**Criterion hit: "arm A conformance high, the near-miss worry is overstated for contracts, and
+that is a result in BPT's favour."**
+
+### What experiments 01 and 02 say together
+
+They disagree, and the disagreement is the point.
+
+Experiment 01 measured **preference**: left alone, a model does not reach for BPT's vocabulary.
+Experiment 02 measured **performance**: handed BPT's vocabulary, the model follows it exactly,
+produces correct code at the same rate as with the in-distribution alternative, and in the one
+place the vocabularies differ in meaning, BPT's version produced the better code.
+
+Preference and performance are not the same thing, and only one of them decides an
+architecture. The audit assumed they moved together because the talk implied it. For BPT's
+contract format, at this task size, they do not.
+
+### What is NOT concluded from this
+
+One behaviour, one model, one easy task, and a ceiling. The arms might separate on something
+harder.
+
+That is not a licence to keep raising the difficulty until a difference appears. Escalating a
+task until the hypothesis wins is the same fishing the pre-registration bans, just slower. A
+harder task is a new experiment, with its own criteria written before its own first run.
+
+Nothing here tests the declaration file or the spec format, whose vocabularies experiment 01
+found further out of distribution than the contract's.
 
 ## Experiment 03: island with and without an exemplar
 

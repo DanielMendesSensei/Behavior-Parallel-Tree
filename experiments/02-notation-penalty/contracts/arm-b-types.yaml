@@ -1,0 +1,58 @@
+# ARM B. Byte for byte arm A, except for the four type tokens.
+#
+# text  -> string
+# money -> string   (the in-distribution way to carry an exact decimal amount)
+# list  -> array
+#
+# `integer`, `boolean` and `object` were already in-distribution and do not move.
+# Nothing else changes: same keys, same nesting, same rules, same errors, same
+# constraint spellings (`min`, `max`, `default`, per field `required`). This arm
+# exists to isolate one variable. If it beats arm A, the four invented type names
+# are the cost, and nothing else about bpt/v1 has to move.
+id: product.list
+version: 1
+kind: query
+title: List products
+
+authorization:
+  required: true
+  roles: [customer]
+
+input:
+  search: { type: string, required: false }
+  page:   { type: integer, min: 1, default: 1 }
+  size:   { type: integer, min: 1, max: 100, default: 20 }
+
+output:
+  items:
+    type: array
+    of:
+      object:
+        id:        { type: string }
+        name:      { type: string }
+        price:     { type: string }
+        available: { type: boolean }
+  total: { type: integer }
+  page:  { type: integer }
+
+rules:
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
+  - id: availability
+    describe: only available products are returned
+  - id: price-exact
+    describe: >-
+      price is a monetary amount and must round trip without losing precision,
+      so it is never held in binary floating point
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: page or size out of range
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing or expired

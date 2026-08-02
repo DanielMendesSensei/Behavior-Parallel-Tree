@@ -34,10 +34,16 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+
+FENCE_RE = re.compile(r"```([A-Za-z0-9_+-]*)\n(.*?)```", re.DOTALL)
+# stdlib unittest reports "Ran 12 tests" and then OK, or FAILED (failures=3, errors=1).
+RAN_RE = re.compile(r"^Ran (\d+) test", re.MULTILINE)
+TALLY_RE = re.compile(r"(failures|errors)=(\d+)")
 
 try:
     import yaml
@@ -71,6 +77,69 @@ def read_prompt(path):
 
 def sha256(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def render_prompt(text, variables):
+    """Substitute {name} placeholders with file contents.
+
+    Plain replacement, not str.format, because the interpolated files are YAML
+    and Python and are full of braces of their own. format() would either crash
+    on them or silently eat them, and a prompt that silently lost a line is the
+    kind of defect that produces a clean looking table of nothing.
+    """
+    for name, value in variables.items():
+        text = text.replace("{%s}" % name, value.rstrip("\n"))
+    leftover = re.findall(r"\{([a-z_]+)\}", text)
+    if leftover:
+        raise SystemExit("error: prompt has unfilled placeholders: %s" % sorted(set(leftover)))
+    return text
+
+
+def extract_artifact(output):
+    """The largest fenced block. The prompts ask for exactly one."""
+    blocks = FENCE_RE.findall(output or "")
+    if not blocks:
+        return None
+    return max(blocks, key=lambda pair: len(pair[1]))[1]
+
+
+def run_harness(base, harness, artifact):
+    """Materialise the artifact in a copy of the scaffold and run the check."""
+    if artifact is None:
+        return {"harness_ok": False, "harness_error": "no fenced code block in the answer"}
+    workdir = tempfile.mkdtemp(prefix="bpt-harness-")
+    target = os.path.join(workdir, "run")
+    try:
+        shutil.copytree(os.path.join(base, harness["scaffold"]), target)
+        with open(os.path.join(target, harness["artifact"]), "w", encoding="utf-8") as fh:
+            fh.write(artifact)
+        proc = subprocess.run(
+            harness["verify"],
+            capture_output=True,
+            text=True,
+            timeout=harness.get("timeout_s", 180),
+            cwd=target,
+        )
+        # unittest writes its report to stderr, so both streams are kept.
+        tail = ((proc.stdout or "") + (proc.stderr or ""))[-6000:]
+        ran = RAN_RE.search(tail)
+        ran = int(ran.group(1)) if ran else 0
+        tally = {kind: int(count) for kind, count in TALLY_RE.findall(tail)}
+        failed = tally.get("failures", 0) + tally.get("errors", 0)
+        passed = max(ran - failed, 0)
+        return {
+            "harness_ok": proc.returncode == 0,
+            "harness_passed": passed,
+            "harness_failed": failed,
+            "harness_returncode": proc.returncode,
+            "harness_output": tail,
+        }
+    except subprocess.TimeoutExpired:
+        return {"harness_ok": False, "harness_error": "verify timed out"}
+    except OSError as exc:
+        return {"harness_ok": False, "harness_error": "could not run verify: %s" % exc}
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
 
 
 def load_jsonl(path):
@@ -155,6 +224,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print what would run, spend nothing")
     ap.add_argument("--budget-usd", type=float, default=None, help="stop the sweep past this cost")
     ap.add_argument("--only-cell", default=None, help="run a single cell by name")
+    ap.add_argument("--only-arm", default=None, help="run a single arm by name")
     ap.add_argument("--only-model", default=None, help="run a single model")
     ap.add_argument("--n", type=int, default=None, help="override the run count per cell")
     ap.add_argument(
@@ -178,71 +248,110 @@ def main():
     failures = 0
     stopped_by_budget = False
 
+    # Files interpolated into every prompt, identical for every arm.
+    shared = {}
+    for name, path in (plan.get("includes") or {}).items():
+        with open(os.path.join(base, path), encoding="utf-8") as fh:
+            shared[name] = fh.read()
+
+    # A plan without arms behaves as one unnamed arm, so experiment 01 keeps
+    # working unchanged.
+    arms = plan.get("arms") or [{"name": None}]
+
     for cell in plan["cells"]:
         if args.only_cell and cell["name"] != args.only_cell:
             continue
-        prompt = read_prompt(os.path.join(base, cell["prompt"]))
-        prompt_hash = sha256(prompt)
+        template = read_prompt(os.path.join(base, cell["prompt"]))
         jsonl = os.path.join(runs_dir, cell["name"] + ".jsonl")
         recorded = load_jsonl(jsonl)
-
-        stale = {r["prompt_sha256"] for r in recorded if r.get("prompt_sha256")} - {prompt_hash}
-        if stale and not args.allow_prompt_change:
-            sys.stderr.write(
-                "error: %s already holds runs made with a different prompt (%s).\n"
-                "The prompt was edited after those runs. Start a new runs directory,\n"
-                "or pass --allow-prompt-change if you know the edit is cosmetic.\n"
-                % (jsonl, ", ".join(sorted(stale)))
-            )
-            return 1
-
-        done = {(r["model"], r["run"]) for r in recorded if r.get("ok")}
+        harness = cell.get("harness")
         n = args.n or cell.get("n", default_n)
 
-        for model in models:
-            cmd = build_command(executor, model)
-            for index in range(n):
-                if (model, index) in done:
-                    continue
-                label = "%s/%s run %d" % (cell["name"], model, index)
-                if args.dry_run:
-                    print("would run %s: %s" % (label, " ".join(repr(c) for c in cmd)))
-                    continue
-                if args.budget_usd is not None and spent >= args.budget_usd:
-                    sys.stderr.write(
-                        "budget reached (%.2f of %.2f usd), stopping before %s\n"
-                        % (spent, args.budget_usd, label)
-                    )
-                    stopped_by_budget = True
-                    break
+        for arm in arms:
+            if args.only_arm and arm["name"] != args.only_arm:
+                continue
+            variables = dict(shared)
+            if arm.get("contract"):
+                with open(os.path.join(base, arm["contract"]), encoding="utf-8") as fh:
+                    variables["contract"] = fh.read()
+            prompt = render_prompt(template, variables)
+            prompt_hash = sha256(prompt)
 
-                sys.stderr.write("running %s ... " % label)
-                sys.stderr.flush()
-                result = run_once(
-                    cmd, prompt, executor.get("timeout_s", 420), executor.get("prompt_via", "stdin")
+            same_arm = [r for r in recorded if r.get("arm") == arm["name"]]
+            stale = {r["prompt_sha256"] for r in same_arm if r.get("prompt_sha256")} - {prompt_hash}
+            if stale and not args.allow_prompt_change:
+                sys.stderr.write(
+                    "error: %s already holds %s runs made with a different prompt (%s).\n"
+                    "Something was edited after those runs. Start a new runs directory, or\n"
+                    "pass --allow-prompt-change if you know the edit is cosmetic.\n"
+                    % (jsonl, arm["name"] or "unnamed-arm", ", ".join(sorted(stale)))
                 )
-                record = {
-                    "experiment": plan["experiment"],
-                    "plan_revision": plan.get("revision"),
-                    "cell": cell["name"],
-                    "model": model,
-                    "run": index,
-                    "ts": now_iso(),
-                    "prompt_sha256": prompt_hash,
-                    "command": cmd,
-                }
-                record.update(result)
-                append_jsonl(jsonl, record)
+                return 1
 
-                if result.get("ok"):
-                    spent += result.get("cost_usd") or 0.0
-                    sys.stderr.write(
-                        "ok (%.4f usd, %d chars)\n"
-                        % (result.get("cost_usd") or 0.0, len(result.get("output") or ""))
+            done = {(r["model"], r["run"]) for r in same_arm if r.get("ok")}
+
+            for model in models:
+                cmd = build_command(executor, model)
+                for index in range(n):
+                    if (model, index) in done:
+                        continue
+                    label = "%s/%s/%s run %d" % (
+                        cell["name"], arm["name"] or "-", model, index,
                     )
-                else:
-                    failures += 1
-                    sys.stderr.write("FAILED: %s\n" % result.get("error"))
+                    if args.dry_run:
+                        print("would run %s (prompt %s)" % (label, prompt_hash))
+                        continue
+                    if args.budget_usd is not None and spent >= args.budget_usd:
+                        sys.stderr.write(
+                            "budget reached (%.2f of %.2f usd), stopping before %s\n"
+                            % (spent, args.budget_usd, label)
+                        )
+                        stopped_by_budget = True
+                        break
+
+                    sys.stderr.write("running %s ... " % label)
+                    sys.stderr.flush()
+                    result = run_once(
+                        cmd,
+                        prompt,
+                        executor.get("timeout_s", 420),
+                        executor.get("prompt_via", "stdin"),
+                    )
+                    record = {
+                        "experiment": plan["experiment"],
+                        "plan_revision": plan.get("revision"),
+                        "cell": cell["name"],
+                        "arm": arm["name"],
+                        "model": model,
+                        "run": index,
+                        "ts": now_iso(),
+                        "prompt_sha256": prompt_hash,
+                        "command": cmd,
+                    }
+                    record.update(result)
+                    if harness and result.get("ok"):
+                        record.update(
+                            run_harness(base, harness, extract_artifact(result.get("output")))
+                        )
+                    append_jsonl(jsonl, record)
+
+                    if result.get("ok"):
+                        spent += result.get("cost_usd") or 0.0
+                        note = ""
+                        if harness:
+                            note = " | tests %s passed, %s failed" % (
+                                record.get("harness_passed", "?"),
+                                record.get("harness_failed", "?"),
+                            )
+                        sys.stderr.write(
+                            "ok (%.4f usd, %d chars)%s\n"
+                            % (result.get("cost_usd") or 0.0, len(result.get("output") or ""), note)
+                        )
+                    else:
+                        failures += 1
+                        sys.stderr.write("FAILED: %s\n" % result.get("error"))
+                if stopped_by_budget:
+                    break
             if stopped_by_budget:
                 break
         if stopped_by_budget:

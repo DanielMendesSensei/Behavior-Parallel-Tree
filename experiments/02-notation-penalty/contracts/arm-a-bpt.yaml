@@ -1,0 +1,55 @@
+# ARM A. BPT's own notation, bpt/v1, exactly as docs/CONTRACT-FORMAT.md specifies.
+#
+# This is packages/contracts/product/list/contract.yaml with one addition, made
+# to every arm equally: the price-exact rule. Arm A states money semantics twice
+# (through `type: money` and through the rule) while the other arms state it once
+# (through the rule alone). Without that rule the arms would not carry the same
+# information, and the comparison would be measuring a missing sentence rather
+# than a notation.
+id: product.list
+version: 1
+kind: query
+title: List products
+
+authorization:
+  required: true
+  roles: [customer]
+
+input:
+  search: { type: text, required: false }
+  page:   { type: integer, min: 1, default: 1 }
+  size:   { type: integer, min: 1, max: 100, default: 20 }
+
+output:
+  items:
+    type: list
+    of:
+      object:
+        id:        { type: text }
+        name:      { type: text }
+        price:     { type: money }
+        available: { type: boolean }
+  total: { type: integer }
+  page:  { type: integer }
+
+rules:
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
+  - id: availability
+    describe: only available products are returned
+  - id: price-exact
+    describe: >-
+      price is a monetary amount and must round trip without losing precision,
+      so it is never held in binary floating point
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: page or size out of range
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing or expired

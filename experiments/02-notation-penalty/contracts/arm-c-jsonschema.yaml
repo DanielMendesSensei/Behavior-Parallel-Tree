@@ -1,0 +1,81 @@
+# ARM C. BPT's envelope kept whole, with input and output expressed as JSON
+# Schema instead of BPT's inline shorthand.
+#
+# The envelope (id, version, kind, title, authorization, rules, errors) is
+# untouched, because experiment 01 found that fourteen of BPT's twenty three keys
+# are what a model reaches for unprompted. Only the two blocks carrying the type
+# detail move to the notation the models actually produced.
+#
+# This arm is the expensive one on purpose: it is longer than arms A and B for
+# the same behavior, and experiment 01 measured that in-distribution notation
+# costs between 1.6 and 20 times more characters. Context is the resource BPT
+# exists to conserve, so the verbosity is not a side effect to be excused. It is
+# half of what this arm is measuring.
+id: product.list
+version: 1
+kind: query
+title: List products
+
+authorization:
+  required: true
+  roles: [customer]
+
+input:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  additionalProperties: false
+  properties:
+    search:
+      type: string
+    page:
+      type: integer
+      minimum: 1
+      default: 1
+    size:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 20
+  required: []
+
+output:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  additionalProperties: false
+  properties:
+    items:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        properties:
+          id:        { type: string }
+          name:      { type: string }
+          price:     { type: string }
+          available: { type: boolean }
+        required: [id, name, price, available]
+    total: { type: integer }
+    page:  { type: integer }
+  required: [items, total, page]
+
+rules:
+  - id: ordering
+    describe: items ordered by name ascending
+  - id: search-case-insensitive
+    describe: search by name ignores case
+  - id: availability
+    describe: only available products are returned
+  - id: price-exact
+    describe: >-
+      price is a monetary amount and must round trip without losing precision,
+      so it is never held in binary floating point
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: page or size out of range
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing or expired

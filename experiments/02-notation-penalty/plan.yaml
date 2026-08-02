@@ -1,0 +1,67 @@
+# Experiment 02: notation penalty.
+#
+# Fixed before the first run. Experiment 01 measured what a model reaches for.
+# This one measures whether that preference changes what it produces, which is a
+# different question and the one that actually decides anything.
+revision: 1
+experiment: 02-notation-penalty
+runs_dir: runs
+
+# One model, on purpose. Sonnet showed the wider spread in experiment 01, so it
+# is the more likely to reveal an effect, and one model keeps the sweep inside a
+# few dollars. Pre-registered so it cannot become a fishing licence: if the gap
+# between arms falls inside the baseline spread, the result is "could not
+# measure". Opus does NOT get added afterwards to hunt for a difference.
+n: 5
+models: [sonnet]
+
+# Three contracts for one behaviour, carrying identical information.
+#   A: bpt/v1 exactly as documented.
+#   B: A with only the four invented type tokens replaced.
+#   C: A with input and output moved to JSON Schema, envelope untouched.
+arms:
+  - { name: arm-a-bpt,        contract: contracts/arm-a-bpt.yaml }
+  - { name: arm-b-types,      contract: contracts/arm-b-types.yaml }
+  - { name: arm-c-jsonschema, contract: contracts/arm-c-jsonschema.yaml }
+
+# Files interpolated into every prompt, identical for every arm.
+includes:
+  spec: spec.md
+  support: scaffold/_support.py
+  stub: scaffold/products.py
+
+cells:
+  - name: implement
+    prompt: prompts/implement.md
+    # stdlib unittest, no third party dependency. The suite was proved both ways
+    # before the first run: 12 of 12 green against a reference implementation,
+    # and red against the stub and against a file that does not parse. A suite
+    # that has only ever been seen failing proves nothing about the arm it fails.
+    harness:
+      scaffold: scaffold
+      artifact: products.py
+      verify: [python3, -m, unittest, discover, -p, "test_*.py"]
+  - name: extend
+    prompt: prompts/extend.md
+
+executor:
+  command: claude
+  args:
+    - -p
+    - --safe-mode
+    - --tools
+    - ""
+    - --strict-mcp-config
+    - --disable-slash-commands
+    - --no-session-persistence
+    - --output-format
+    - json
+    - --model
+    - "{model}"
+    - --system-prompt
+    - >-
+      You are answering a technical question. You have no tools, no file system
+      and no repository: everything you produce must appear in your reply as
+      text.
+  prompt_via: stdin
+  timeout_s: 600

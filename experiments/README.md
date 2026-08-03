@@ -190,11 +190,20 @@ measure", and the other model does not get added afterwards to hunt for a differ
 - **First-attempt success hits the ceiling in both arms**, as it did in experiment 02: that
   half is reported as undiscriminating rather than as a tie, and consistency decides alone.
 
+## Experiment 04: does the conventional arm leave any room?
+
+Added after 01, 02 and 03 had run, because all three of them compared BPT against variants of
+BPT and none of them compared BPT against not using BPT. It has its own pre-registration, in
+`04-conventional-ceiling/README.md`, for two reasons: it was fixed later, so folding it into
+this file would blur the order that `git log` is supposed to prove, and it runs against a
+private codebase, so its prompts and raw output cannot live here. That file records the sha256
+of each prompt instead, and says plainly what a reader of this repository can and cannot verify.
+
 ## Layout
 
 ```
 experiments/
-  README.md                      this file, the pre-registration
+  README.md                      this file, the pre-registration for 01, 02 and 03
   RESULTS.md                     what happened, and which criterion it hit
   lib/runner.py                  fires N runs in a clean session, writes raw JSONL
   lib/score.py                   applies the rubric, prints the table
@@ -206,6 +215,8 @@ experiments/
   02-notation-penalty/
   03-exemplar/
     checklist.md                 the ten structural consistency items
+  04-conventional-ceiling/
+    README.md                    its own pre-registration, and the prompt hashes
 ```
 
 ## Running

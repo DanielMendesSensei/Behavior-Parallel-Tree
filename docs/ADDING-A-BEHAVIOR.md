@@ -64,7 +64,7 @@ Scenarios test observable behavior, survive a refactor, and never mention a func
 
 ## 4. Fill in the contract.yaml
 
-The contract is the neutral YAML that ties the two sides together. No language, framework, or runtime appears here. Available neutral types: `text`, `integer`, `decimal`, `boolean`, `money`, `list`, `object`.
+The contract is the neutral YAML that ties the two sides together. No language, framework, or runtime appears here. Available neutral types: `string`, `integer`, `number`, `boolean`, `array`, `object`, and `money` for an exact amount.
 
 Fields:
 

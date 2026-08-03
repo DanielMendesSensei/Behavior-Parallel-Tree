@@ -86,10 +86,10 @@ The output JSON always carries a `status`. Beyond that it may carry artifacts th
 | Hook | What it does | What it writes |
 |------|-----------|---------------|
 | `scaffold` | creates the node's mirrored folders from the spec, plus a contract and spec stub. Idempotent: running it again neither duplicates nor overwrites human work | `apps/<side>/behaviors/<path>/src/`, stub in `packages/contracts/<path>/` |
-| `plan` | produces a technical plan to implement the node. Does not write product code | plan artifact in `prior_artifacts` |
+| `plan` | produces a technical plan to implement the node, written at execution time against the tree as it is now, never in advance. May also emit a spec per module it intends to create, in the "these inputs go in, this comes out" form, which is what `execute` then writes the unit tests against. Does not write product code | plan artifact in `prior_artifacts` |
 | `execute` | implements the behavior, writing only inside the node's folders | `apps/<side>/behaviors/<path>/src/` |
 | `verify` | runs the surface scenarios plus the unit tests and checks import direction | verification report, `status`, and `findings` |
-| `review` | semantic review of what was built; a gate after green | `status` and `findings` |
+| `review` | semantic review of what was built; a gate after green | a review report, plus `status` and `findings` |
 | `codegen` | materializes the neutral contract into the stack's types and validators | `apps/<side>/behaviors/<path>/__generated__/` |
 
 Boundary rules every hook respects:

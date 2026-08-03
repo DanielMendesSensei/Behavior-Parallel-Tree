@@ -108,7 +108,7 @@ Example contract showing the boundary:
 id: product.list                          # value: your product's word
 kind: query                               # key and value: BPT's words
 input:                                    # key: BPT's word
-  search: { type: text, required: false } # field name yours, keys and type BPT's
+  search: { type: string, required: false } # field name yours, keys and type BPT's
   page:   { type: integer, default: 1 }
 errors:                                   # key: BPT's word
   - code: INVALID_PARAMETER               # code: your product's word

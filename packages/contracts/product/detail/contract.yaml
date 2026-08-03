@@ -9,12 +9,12 @@ authorization:
   roles: [customer]
 
 input:
-  productId: { type: text, required: true }
+  productId: { type: string, required: true }
 
 output:
-  id:         { type: text }
-  name:       { type: text }
-  description: { type: text }
+  id:         { type: string }
+  name:       { type: string }
+  description: { type: string }
   price:      { type: money }
   available:  { type: boolean }
 

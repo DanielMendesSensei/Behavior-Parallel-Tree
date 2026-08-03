@@ -55,6 +55,11 @@ The property that defines the unit is being **disposable**. When you rewrite the
 
 A unit never leaks outside the node. If a test needs to know the internals of two behaviors at the same time, it is not a unit: it either became a scenario (on the boundary) or a flow (crossing behaviors).
 
+Two consequences of that scope, worth saying out loud because the unit layer is the one place BPT deliberately tests the how, and testing the how is normally the mistake:
+
+- **A unit test can never block another node.** It runs inside one unit's worktree, against one node's code, as step 4 of that unit's `verify`. A stale unit test stops the agent that wrote it and nobody else. The reason the usual advice says never test implementation is that the test outlives the code and becomes a second source of truth for it; here the test is scoped and disposable, so the failure mode does not reach.
+- **Its source of truth is the plan, not the code.** If the same agent writes the implementation and then writes tests by reading what it just wrote, the tests only restate the code and pass by construction. That is why `plan` may emit a spec per module, in the "these inputs go in, this comes out" form, before `execute` runs: the unit test is written against that, not against the implementation.
+
 ## Flow / e2e: the journey across N behaviors
 
 The flow test covers a business journey that crosses several behaviors, anchored to a PRD. It lives in `packages/contracts/_flows/<prd>/`, outside any node, because no node owns it: the owner is the PRD level.
@@ -89,6 +94,18 @@ Property tests (generating many inputs and checking invariants) and mutation tes
 Green is not done. After the scenarios, the units, and (for two-sided) the bilateral contract pass, the node still goes through the **semantic review** (`review`), which is a gate **after green**.
 
 The semantic review asks what the tests cannot ask: does the implementation do what the spec meant, and not just what it literally checked? Is the import direction respected? Does the behavior honor the spirit of the `rules`? It runs as the last stage of the loop and can return findings, which come back as feedback for a new attempt (up to 3; the 3rd failure marks the node as `blocked` with the worktree preserved).
+
+### It writes a report, not only a verdict
+
+A diff of added and removed lines is unreadable past a certain size, and reading it is exactly the job being handed to a person. So `review` produces a document, and the verdict is a field on it:
+
+- **One section per module the attempt changed**, not one section per file. Each says what that module now does and what changed about it in words, with the added and removed lines shown inside the context of that module rather than as one flat diff.
+- **What it was asked for**, from the spec, next to what it got.
+- **The verdict**, `status`, and any `findings`, which are what feed back into the next attempt.
+
+The report goes in `artifacts` on the hook result, the same slot `verify` uses for its verification report. In `--mode yolo` the review still runs and still writes the report; it just stops gating, so the report is there to read afterwards instead of before.
+
+This is one place where the loop and the reader want different things. The loop needs `status` and `findings` and nothing else. The person needs the prose. Producing only the first is how a review hook quietly becomes a checker that no one can learn anything from.
 
 ## How the verify hook consumes the scenarios
 

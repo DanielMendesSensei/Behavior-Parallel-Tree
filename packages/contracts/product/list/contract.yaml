@@ -11,17 +11,17 @@ authorization:
   roles: [customer]
 
 input:
-  search: { type: text, required: false }
+  search: { type: string, required: false }
   page:   { type: integer, min: 1, default: 1 }
   size:   { type: integer, min: 1, max: 100, default: 20 }
 
 output:
   items:
-    type: list
+    type: array
     of:
       object:
-        id:        { type: text }
-        name:      { type: text }
+        id:        { type: string }
+        name:      { type: string }
         price:     { type: money }
         available: { type: boolean }
   total: { type: integer }

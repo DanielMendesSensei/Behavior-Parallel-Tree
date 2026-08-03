@@ -4,6 +4,12 @@ The kernel is the cross-cutting infrastructure that lives **outside the behavior
 
 The goal of BPT is to minimize the context needed to make a change. The kernel serves that goal when it concentrates what is genuinely shared. It **betrays** that goal when it becomes a dumping ground of conveniences: every thing that rises to the kernel without deserving it increases everyone's context. That is why the kernel is small by design and the bar for entry is high.
 
+## The price, stated before the benefits
+
+The kernel is the only thing in BPT that is in **everyone's** context. The budget for a change is the node, plus the contracts it consumes, plus the kernel: never the node alone. So a symbol that enters the kernel is a symbol every agent reads on every change on that side, and the kernel is therefore the worst place in the repository to put an abstraction of your own invention. Prefer the thinnest possible layer over a library that already exists and that a model has already read a million times, and keep whatever is yours inside the behavior that needs it.
+
+There is a second cost, in time rather than context. A kernel change runs in its own wave, before every behavior wave, and serialized (`./bpt run --kernel`). Nothing that depends on the kernel moves while the kernel is moving. That is deliberate, and it is why the promotion bar below is high: every promotion buys a shared symbol and sells a bit of parallelism.
+
 ## The direction rule (absolute)
 
 There is a single permitted direction:

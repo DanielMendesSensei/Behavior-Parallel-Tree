@@ -216,6 +216,28 @@ harder task is a new experiment, with its own criteria written before its own fi
 Nothing here tests the declaration file or the spec format, whose vocabularies experiment 01
 found further out of distribution than the contract's.
 
+## What changed in the repository because of these results
+
+Recorded here, and not only in the changelog, because an experiment that changes
+nothing was a way of passing the time.
+
+- **The type vocabulary moved.** `text` became `string`, `list` became `array`,
+  `decimal` became `number`, in `docs/CONTRACT-FORMAT.md`, in both shipped
+  contracts, and in every doc that listed the types. Zero of ten runs produced
+  the old three, and conforming costs nothing.
+- **`money` stayed, and the reason is written next to it in the format doc.**
+  Five of five implementations reached for an exact decimal type when the
+  contract said `money`; zero of five did when it said `string` plus a rule in
+  prose saying the same thing. It is the one invented type that carries meaning
+  the standard vocabulary loses, and now it is an exception someone can audit
+  rather than a preference.
+
+Note for anyone reading experiment 02 later: `02-notation-penalty/contracts/arm-a-bpt.yaml`
+still uses `text` and `list`, because it is the pre-registered material and it
+recorded the format as it was on the day. It is deliberately not updated. The
+format changed because of that run, so making the run match the format
+afterwards would erase the only evidence for the change.
+
 ## Experiment 03: island with and without an exemplar
 
 Not run. Material confirmed to exist: `content.deliver` and `vault.sync` are implemented on

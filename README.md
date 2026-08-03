@@ -4,7 +4,7 @@
 
 Ask an agent to change one behavior of your app and it loads half the repo to find out what it may touch. Ask three agents to work at once and they collide, because nothing in a folder-per-feature layout says which pieces are independent. BPT fixes both by making the boundaries declared, checkable and machine-readable:
 
-- **Every behavior is an island.** A behavior may import from its side's kernel and read the contracts it declares. Behavior to behavior imports are forbidden, and the rule is enforced, not just documented.
+- **Every behavior is an island.** A behavior may import from its side's kernel and read the contracts it declares. Behavior to behavior imports are forbidden, and the rule is checkable rather than merely written down: the adapter's `verify` is where it is enforced, in your language, and the runner treats a failed `verify` as a failed attempt.
 - **One neutral contract joins the sides.** The same behavior exists on backend and on frontend (or on any sides you declare), with one contract and one spec for all of them, never a copy per side.
 - **The dependency graph is data.** One command reads the tree and derives the parallelism waves: which behaviors can be built at the same time, and which have to wait.
 - **The context per change is bounded on purpose.** An agent building a behavior loads the node's folder, its own contract, the contracts it consumes, and the kernel read-only. Nothing else.

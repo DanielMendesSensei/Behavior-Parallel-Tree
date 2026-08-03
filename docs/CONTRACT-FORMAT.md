@@ -42,13 +42,30 @@ The `input` and `output` fields use only neutral types, with no tie to a stack:
 
 | Type | Meaning |
 |------|---------|
-| `text` | Free text. |
+| `string` | Free text. |
 | `integer` | Whole number. |
-| `decimal` | Number with decimal places (not monetary). |
+| `number` | Number with decimal places (not monetary). |
 | `boolean` | True or false. |
-| `money` | Monetary value (money semantics, handled with care by each side). |
-| `list` | Ordered collection (`list of <type>`). |
+| `array` | Ordered collection (`array of <type>`). |
 | `object` | Structure with named fields. |
+| `money` | Monetary value: an exact amount that must not be held in binary floating point. |
+
+Six of those seven are the words every schema language already uses. That is on
+purpose, and it is measured rather than assumed: in `experiments/`, ten clean
+runs asked a model to design this exact file with no BPT in sight, and it reached
+for `string`, `integer`, `number`, `boolean`, `object` and `array` every time.
+BPT used to say `text`, `decimal` and `list` instead. Those three appeared zero
+times in ten runs, so they were three words of friction buying nothing, and they
+are gone.
+
+`money` stays, and it is the one exception worth defending. It has no equivalent
+in the standard vocabulary: `string` and `number` both describe a shape, and what
+matters about an amount is a rule about precision. The same experiment measured
+the difference. Given a contract saying `type: money`, five implementations out
+of five reached for an exact decimal type. Given `type: string` plus a written
+rule saying the value must never touch binary floating point, zero out of five
+did, and all five returned a plain string. The rule was there, in the same words,
+in both arms. The type carried the meaning into the code and the prose did not.
 
 ### Why no language type, route, or HTTP verb
 
@@ -138,17 +155,17 @@ authorization:
   roles: [customer]
 
 input:
-  search: { type: text, required: false }
+  search: { type: string, required: false }
   page:   { type: integer, min: 1, default: 1 }
   size:   { type: integer, min: 1, max: 100, default: 20 }
 
 output:
   items:
-    type: list
+    type: array
     of:
       object:
-        id:        { type: text }
-        name:      { type: text }
+        id:        { type: string }
+        name:      { type: string }
         price:     { type: money }
         available: { type: boolean }
   total: { type: integer }

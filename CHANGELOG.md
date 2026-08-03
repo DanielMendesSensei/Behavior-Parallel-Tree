@@ -13,6 +13,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 ## Unreleased
 
 ### Added
+- **`./bpt run`**, the runner, in the core. It walks the waves the validator derives, cuts a worktree per `(side, id)` on `bpt/<side>/<id>`, drives `codegen -> plan -> execute -> verify -> review` with up to 3 attempts, carries `findings` forward as `feedback` and `artifacts` forward as `prior_artifacts`, leaves a blocked unit's worktree in place, and writes `.bpt/last-run.json`. Flags: `--dry-run`, `--only`, `--jobs`, `--mode yolo`, `--kernel`, `--base`, `--attempts`, `--timeout`.
+- `experiments/`: the measurements the README's hypothesis section asks for, pre-registered before each run.
 - `LICENSE` (MIT), so the clone-per-project premise is legally available.
 - `CONTRIBUTING.md` for changing BPT itself, separate from the guide for using it.
 - `CODE_OF_CONDUCT.md`, issue and pull request templates, `.editorconfig`.
@@ -22,6 +24,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 - This changelog, and the schema contract stated above.
 
 ### Changed
+- **The line between core and adapter moved to where the protocol already put it.** `docs/ADAPTER.md` used to hand orchestration to the adapter, while the same document said the core assembles an envelope carrying `attempt`, the previous attempt's `feedback`, `prior_artifacts`, and the unit's worktree and branch. None of those five can be read off the tree, the contract or the spec, and the adapter cannot hold them because it is invoked once per hook and keeps nothing in between. So the document contradicted itself, and the half that required a runner on this side was the correct half. What is yours to write is the six hooks, which are the only part that knows a language.
+- `docs/ADAPTER.md` also stopped promising what it could not do. It said the placeholder existed "so you can watch the loop run end to end", and there was no loop. Now there is.
+- `./bpt check` gained a fourth group: the runner closes the loop against a stub adapter, and refuses to close when the stub keeps failing.
 - The README now opens with the problem BPT solves and who it is for, answers "why not just organize by feature", and shows the validator's real output.
 - The contributing guide under `docs/` was renamed to `docs/ADDING-A-BEHAVIOR.md`, which is what it always was: a guide for the person using BPT, not for the person changing it. GitHub surfaces a file named CONTRIBUTING as a contributor guide, and that one was a user manual.
 - `docs/CONTRACT-FORMAT.md`'s example is now a verbatim copy of the shipped `product.list` contract, and its field documentation matches it (`required: false`, boolean `retryable`, rules as `id` plus `describe`).

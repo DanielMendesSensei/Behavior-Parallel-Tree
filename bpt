@@ -10,6 +10,10 @@ case "$cmd" in
     shift
     exec python3 "$HERE/tools/bpt/validate.py" "$@"
     ;;
+  run)
+    shift
+    exec python3 "$HERE/tools/bpt/run.py" "$@"
+    ;;
   check)
     shift
     exec python3 "$HERE/tools/bpt/check.py" "$@"
@@ -21,9 +25,13 @@ case "$cmd" in
     echo ""
     echo "commands:"
     echo "  validate   validate bpt.config.yaml and the tree (7 invariants)"
+    echo "  run        walk the waves: a worktree per (side, id), the build"
+    echo "             loop through the adapter, 3 attempts, feedback forward"
     echo "  check      everything BPT checks about itself: validate, the"
-    echo "             refusal cases, and the docs against the tree"
+    echo "             refusal cases, the runner loop, and the docs"
     echo "  help       show this help"
+    echo ""
+    echo "run flags: --dry-run  --only <id>  --jobs N  --mode yolo  --kernel"
     echo ""
     echo "to materialize a new behavior, use the adapter (scaffold):"
     echo "  echo '{\"node\":{\"id\":\"product.create\",\"sides\":[\"backend\",\"frontend\"]}}' \\"

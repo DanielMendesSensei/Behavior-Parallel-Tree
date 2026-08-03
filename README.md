@@ -31,11 +31,13 @@ BPT is a bet, not a proven result, and it is worth saying so plainly in the firs
 
 **The bet:** when the boundary of a change is declared, checkable and machine-readable, an agent needs less context to make that change correctly, and independent changes can run in parallel without coordination.
 
-**What would confirm it:** the same feature built with and without BPT, comparing tokens spent per change, first-attempt success rate, and how often a change reaches for a file outside its declared island. Those are measurable, and this repository does not measure them yet.
+**What would confirm it:** the same feature built with and without BPT, comparing tokens spent per change, first-attempt success rate, and how often a change reaches for a file outside its declared island.
+
+Counting those three is what `./bpt run` is for. It writes `.bpt/last-run.json` with the attempts, the status of every hook call and whatever token count the adapter reported, so first-attempt success and tokens per change are read off a file instead of estimated. The third one is the adapter's `verify`, which is where the import direction is enforced. Nothing here has run that comparison yet, and `experiments/` holds the measurements that have been made, including the ones that went against this repository's own audit of itself.
 
 **What would refute it:** if keeping contracts and specs honest costs more than the smaller context saves. Or if agents get good enough at whole-repository reasoning that bounding context stops mattering at all, which would make the parallelism the only remaining argument.
 
-**What ships here is the declaring half:** the convention, the neutral contract, the spec format, and the validator that proves the tree is coherent. The executing half, an adapter that walks the waves and drives agents through them, is deliberately yours to write, because it is the only part that has to know your language and your runtime. The protocol it speaks is in [docs/ADAPTER.md](./docs/ADAPTER.md), and `adapters/placeholder/` is the minimal reference.
+**What is yours to write is the adapter:** the six hooks, which are the only part that has to know your language and your runtime. Everything around them ships here, because none of it knows a language: the convention, the neutral contract, the spec format, the validator, and the runner that walks the waves, cuts a worktree per unit and drives the loop. The protocol between the two is in [docs/ADAPTER.md](./docs/ADAPTER.md), and `adapters/placeholder/` is the minimal reference: it answers every hook with an empty ok, which is enough to watch the whole loop run before you have written anything.
 
 ## Who this is for
 
@@ -59,21 +61,24 @@ Prerequisites: Python 3 with PyYAML, and only for the validator. That is tooling
 ```bash
 pip install pyyaml
 ./bpt validate      # checks the 7 invariants and prints the waves
+./bpt run --dry-run # the plan: every unit, its worktree and its branch
+./bpt run           # walks the waves through the adapter
 ./bpt check         # everything BPT checks about itself (see below)
 ./bpt help
 ```
 
-`./bpt check` runs three groups: the tree is coherent, the gate turns red when an
+`./bpt check` runs four groups: the tree is coherent, the gate turns red when an
 invariant breaks (it feeds the validator configs it must refuse, because a
-validator that never fails proves nothing), and no doc cites a path that does not
-exist. The same three run in CI, but they live in the CLI first: a check you
-cannot run on your own machine is a check you do not trust.
+validator that never fails proves nothing), the runner closes the loop against a
+stub adapter and refuses to close when the stub keeps failing, and no doc cites a
+path that does not exist. The same four run in CI, but they live in the CLI first:
+a check you cannot run on your own machine is a check you do not trust.
 
 ## Folder tree
 
 ```
 bpt.config.yaml              single declaration: sides, contracts, and nodes
-bpt                          the CLI (validate, help)
+bpt                          the CLI (validate, run, check, help)
 apps/
   backend/
     behaviors/               the backend-side nodes (root declared in sides)
@@ -87,6 +92,7 @@ adapters/
   placeholder/               reference adapter (only scaffold does real work)
 tools/
   bpt/validate.py            the validator (swappable tooling, not the app's stack)
+  bpt/run.py                 the runner: waves, worktrees, the build loop
 docs/                        the rulebook and the formats
 ```
 
@@ -115,9 +121,11 @@ Their code lives in `apps/backend/behaviors/product/<action>/` and `apps/fronten
 
 ## About the adapter
 
-The core declares (tree, mirror, contract, spec) and checks the invariants. The adapter executes, and it is the only component allowed to know your language, framework and runtime. The two talk over a neutral process protocol: one JSON on stdin, one JSON on stdout, per hook, per execution unit.
+The core declares (tree, mirror, contract, spec), checks the invariants, and walks the waves. The adapter is what happens behind the six hooks, and it is the only component allowed to know your language, framework and runtime. The two talk over a neutral process protocol: one JSON on stdin, one JSON on stdout, per hook, per execution unit.
 
-The adapter shipped here is a placeholder: `scaffold` does real work (creates the mirrored folders and the stubs from the spec), and the other hooks answer with an empty ok. Writing the real one, for your stack, is the work BPT expects of you: `plan`, `execute` (only inside the node's folders), `verify` (run the spec scenarios and check the import direction), `review`, and `codegen` (materialize the neutral contract into your stack's types and validators). The protocol and the envelope are in `docs/ADAPTER.md`.
+The dividing line is not a matter of taste. The core assembles the request envelope, and that envelope carries the attempt number, the findings of the previous attempt, the artifacts of earlier hooks, and the unit's worktree and branch. None of those exist outside a running loop, and the adapter cannot hold them because it is invoked once per hook and keeps nothing in between. So creating a worktree, walking a wave, counting to three and carrying findings forward live here. Nothing in that list knows a language.
+
+The adapter shipped here is a placeholder: `scaffold` does real work (creates the mirrored folders and the stubs from the spec), and the other hooks answer with an empty ok, which is enough for `./bpt run` to drive the whole loop end to end. Writing the real one, for your stack, is the work BPT expects of you: `plan`, `execute` (only inside the node's folders), `verify` (run the spec scenarios and check the import direction), `review`, and `codegen` (materialize the neutral contract into your stack's types and validators). The protocol and the envelope are in `docs/ADAPTER.md`.
 
 ## Scope
 

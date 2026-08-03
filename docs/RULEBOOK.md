@@ -15,7 +15,7 @@ BPT is a stack-agnostic software architecture. It knows no language, framework, 
 - an agent (human or automated) can work on a behavior loading the least possible context;
 - independent behaviors can be built in parallel, respecting a dependency graph.
 
-The BPT core only declares (tree, mirror, contract, spec). The one that executes (worktrees, parallelism, build loop) is a stack-specific adapter. The template ships with 1 placeholder adapter and a minimal validator.
+The BPT core declares (tree, mirror, contract, spec) and walks (waves, a worktree per unit, the build loop). What is stack-specific is the adapter behind the six hooks. The template ships a validator, a runner and 1 placeholder adapter, which is enough to run the whole loop before any stack is connected.
 
 ## The 8 principles
 
@@ -25,7 +25,7 @@ The BPT core only declares (tree, mirror, contract, spec). The one that executes
 4. Trees mirrored by identity, joined by contract. Backend and frontend are separate trees. The same behavior exists on both sides with the same identity and the same spec. The joint between them is a neutral contract. The mirror is N:M through the contract, not a rigid 1:1 coupling.
 5. Behaviors are islands. A behavior does not import from another behavior. If two behaviors need something in common, it either becomes a dependency declared through a contract, or it moves up to the kernel. An island does not talk to an island directly.
 6. Duplicate before abstracting. Rule of three: code is born in the behavior, is copied on the 2nd occurrence, and only moves up to the kernel on the 3rd. Premature abstraction is the biggest enemy of minimal context.
-7. Core declares, adapter executes. The BPT core declares the structure (tree, mirror, contract, spec) and validates invariants. The stack adapter executes (creates worktrees, runs the build loop, generates code). The boundary between the two is a neutral hook protocol.
+7. Core orchestrates, adapter executes. The core declares the structure (tree, mirror, contract, spec), validates the invariants, and drives the orchestration that knows no language: waves, a worktree per unit, the attempt loop, findings feeding forward. The stack adapter is what runs behind the six hooks. The boundary is a neutral hook protocol, and it sits where it does for a checkable reason: the core assembles an envelope carrying the attempt number, the previous attempt's findings and the unit's worktree, and none of that exists outside a running loop.
 8. One canonical form only. Each thing has a single way to be written: one id, one path, one place for the spec, one place for the contract. No synonyms, no variants. The convention is the documentation.
 
 ## Canonical forms
@@ -161,9 +161,9 @@ The core also derives the parallelism waves by topological order.
 
 The adapter is an executable declared in `bpt.config.yaml`. Neutral protocol: `bpt-adapter <hook>` reads a JSON from stdin, writes a JSON to stdout, logs to stderr. Exit 0 means it ran (the status is in the payload), a nonzero exit means the adapter broke.
 
-There are 6 hooks: `scaffold`, `plan`, `execute`, `verify`, `review`, `codegen`. The template's placeholder only does `scaffold` for real; the others return an empty ok status.
+There are 6 hooks: `scaffold`, `plan`, `execute`, `verify`, `review`, `codegen`. The template's placeholder only does `scaffold` for real; the others return an empty ok status, which is enough for the runner to drive the whole loop against it.
 
-The full protocol and the orchestration (a worktree per node-per-side, DAG waves, a loop with up to 3 attempts, the bilateral test, yolo mode) are in [ADAPTER.md](./ADAPTER.md).
+`./bpt run` walks the waves, cuts a worktree per `(side, id)`, runs `codegen -> plan -> execute -> verify -> review` with up to 3 attempts, carries `findings` forward as `feedback`, leaves a blocked unit's worktree in place, and writes `.bpt/last-run.json`. The one orchestration expectation it cannot meet is the bilateral contract test, because no hook in the protocol is keyed on a node rather than a unit: the runner enforces the ordering and reports the node as pending instead of pretending. Full protocol and flags in [ADAPTER.md](./ADAPTER.md).
 
 ## Tests
 
@@ -231,7 +231,9 @@ What stays out of v1, mentioned here as future work:
 - semver plus N/N-1 coexistence plus expand/contract;
 - `event` and `stream` kinds;
 - property and mutation tests in the config;
-- real orchestration (parallelism, retries, yolo, PR-per-PRD, deploy tracking);
+- the bilateral contract test, which needs a hook keyed on the node instead of the unit;
+- derivation of the dependency graph: `deps` and `consumes` are written by hand and only read, so a stale edge produces a wave order the validator will bless;
+- PR-per-PRD and deploy tracking;
 - runtime observability;
 - multi-agent review committee;
 - full brownfield/strangler guide.

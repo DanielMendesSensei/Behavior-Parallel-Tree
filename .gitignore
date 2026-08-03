@@ -14,6 +14,10 @@ __pycache__/
 .venv/
 node_modules/
 
+# Runner state: worktrees and the last run report. Both carry absolute machine
+# paths, and the worktrees are checkouts of branches that already live in git.
+.bpt/
+
 # Editors and OS
 .DS_Store
 *.swp

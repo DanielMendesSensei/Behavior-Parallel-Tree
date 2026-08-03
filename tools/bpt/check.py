@@ -142,11 +142,32 @@ def check_docs(root):
     return proc.returncode == 0
 
 
+def check_runner(root):
+    """The runner drives a stub adapter through the loop, both ways.
+
+    It builds its own throwaway tree, so it says nothing about this repository's
+    nodes. What it proves is that the loop closes when the adapter cooperates
+    and refuses to close when it does not, which is the only reason to trust a
+    green run later.
+    """
+    tests = os.path.join(HERE, "tests")
+    proc = run([sys.executable, "-m", "unittest", "discover", "-s", tests, "-p", "test_*.py"])
+    tail = (proc.stderr or "").strip().splitlines()
+    ran = next((l for l in tail if l.startswith("Ran ")), "no tests ran")
+    print("  %s" % ran)
+    if proc.returncode != 0:
+        for line in tail[-25:]:
+            print("    " + line)
+        return False
+    return True
+
+
 def main(argv):
     root = os.path.abspath(argv[1]) if len(argv) > 1 else os.getcwd()
     groups = [
         ("the tree is coherent", check_tree),
         ("the gate turns red when an invariant breaks", check_gate_turns_red),
+        ("the runner closes the loop, and refuses to", check_runner),
         ("every path the docs cite exists", check_docs),
     ]
     failed = []

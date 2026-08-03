@@ -31,6 +31,7 @@ Single dependency: PyYAML. It is tooling, swappable.
 """
 import argparse
 import datetime
+import getpass
 import hashlib
 import json
 import os
@@ -57,6 +58,30 @@ except ImportError:
 
 def now_iso():
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def scrub(text):
+    """Strip machine identity out of anything that lands in runs/.
+
+    These files are raw model output committed to a public repository, and a
+    model told it is an agent will happily print an `ls -la` of its working
+    directory. The first sweep did exactly that and put an operating system
+    username into a public commit. Nothing about who ran an experiment is part
+    of its result, so it is removed at the boundary rather than trusted not to
+    appear.
+    """
+    if not text:
+        return text
+    home = os.path.expanduser("~")
+    if home and home != "/":
+        text = text.replace(home, "<home>")
+    try:
+        user = getpass.getuser()
+    except Exception:
+        user = ""
+    if user and len(user) >= 4:
+        text = re.sub(r"\b%s\b" % re.escape(user), "<user>", text)
+    return text
 
 
 def read_prompt(path):
@@ -132,7 +157,7 @@ def run_harness(base, harness, artifact):
             "harness_passed": passed,
             "harness_failed": failed,
             "harness_returncode": proc.returncode,
-            "harness_output": tail,
+            "harness_output": scrub(tail),
         }
     except subprocess.TimeoutExpired:
         return {"harness_ok": False, "harness_error": "verify timed out"}
@@ -207,7 +232,7 @@ def run_once(cmd, prompt, timeout_s, prompt_via):
 
     return {
         "ok": not envelope.get("is_error", False),
-        "output": envelope.get("result", ""),
+        "output": scrub(envelope.get("result", "")),
         "cost_usd": envelope.get("total_cost_usd"),
         "usage": envelope.get("usage"),
         "model_usage": envelope.get("modelUsage"),

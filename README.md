@@ -33,7 +33,13 @@ BPT is a bet, not a proven result, and it is worth saying so plainly in the firs
 
 **What would confirm it:** the same feature built with and without BPT, comparing tokens spent per change, first-attempt success rate, and how often a change reaches for a file outside its declared island.
 
-Counting those three is what `./bpt run` is for. It writes `.bpt/last-run.json` with the attempts, the status of every hook call and whatever token count the adapter reported, so first-attempt success and tokens per change are read off a file instead of estimated. The third one is the adapter's `verify`, which is where the import direction is enforced. Nothing here has run that comparison yet, and `experiments/` holds the measurements that have been made, including the ones that went against this repository's own audit of itself.
+Counting those three is what `./bpt run` is for. It writes `.bpt/last-run.json` with the attempts, the status of every hook call and whatever token count the adapter reported, so first-attempt success and tokens per change are read off a file instead of estimated. The third one is the adapter's `verify`, which is where the import direction is enforced. `experiments/` holds the measurements that have been made, including the ones that went against this repository's own audit of itself.
+
+**What came back the first time half of it was tested, and it went against the bet.** Experiment 04 ran five change requests against a real layer-first codebase without BPT, and measured what BPT promises to improve: first-attempt success, and how often a change reaches for a file outside the boundary it was supposed to stay in. Twenty five runs, all five requests correct on the first pass, one to six files opened per change, and not one run leaving its boundary. There was nothing left to improve, so the migration that would have built the other arm was cancelled instead of run.
+
+Two things keep that from being the end of the argument, and both are limits of the test rather than defences of the idea. The codebase was 5,300 lines, which does not come close to stressing the context limits BPT is built around. And every request stated every rule it would be checked on, which is a contract written in prose, handed to the conventional arm for free. The fair summary is that a precise specification did the work, and the layout did not add anything measurable on top of it. That is also what experiment 02 found from the other direction: the contract earns its keep, the tree still has no evidence behind it.
+
+The second clause of the bet, independent changes running in parallel without coordination, has not been tested at all.
 
 **What would refute it:** if keeping contracts and specs honest costs more than the smaller context saves. Or if agents get good enough at whole-repository reasoning that bounding context stops mattering at all, which would make the parallelism the only remaining argument.
 

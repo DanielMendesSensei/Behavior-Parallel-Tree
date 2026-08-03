@@ -349,3 +349,122 @@ that stalls less.
 
 An experiment whose failure mode is a well formed empty answer will quietly shrink its own
 sample and report a clean table while doing it.
+
+## Experiment 04: does the conventional arm leave any room?
+
+### What was run
+
+Five change requests against a private layer-first FastAPI backend, 5 runs each, Sonnet, 25
+runs, 4.08 usd, no failures. Pre-registration in `04-conventional-ceiling/README.md`, committed
+before the first run, with the sha256 of each prompt.
+
+One run is a fresh copy of the repository, the request on stdin, a tool set of `Read`, `Grep`,
+`Glob`, `Edit`, `Write`, and no way to execute anything. Then the diff goes onto a scoring
+clone, a hidden suite runs against it, and the equivalence gate runs against it. The baseline
+is 353 passing and 9 failing, and the gate demands that every test land in exactly that state.
+
+### The numbers
+
+| Cell | k/n | files read | chars of repo ingested | cost usd | turns | outside boundary | gate broken |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cr1` derived field | 5/5 | 3 (3 to 5) | 12,268 | 0.128 (0.106 to 0.137) | 11 | 0 | 0 |
+| `cr2` new rule | 5/5 | 4 (4 to 5) | 20,995 | 0.201 (0.153 to 0.231) | 15 | 0 | 0 |
+| `cr3` new behavior | 5/5 | 6 (5 to 7) | 26,520 | 0.202 (0.162 to 0.251) | 15 | 0 | 0 |
+| `cr4` shared rule | 5/5 | 4 (3 to 5) | 33,394 | 0.221 (0.172 to 0.241) | 11 | 0 | 0 |
+| `cr5` boundary bug | 5/5 | 1 (1 to 2) | 11,401 | 0.076 (0.072 to 0.081) | 6 | 0 | 0 |
+
+Medians, with the within-cell spread in brackets. First-attempt success means the hidden suite
+passed in full and the gate still reported 353 and 9.
+
+### Which pre-registered criterion was hit
+
+**The ceiling, on all four of its conditions.** The criterion asked for at least 23 of 25, no
+cell below 4 of 5, a median of 8 or fewer files opened, and at most one run touching a file
+outside its boundary. What came back was 25 of 25, every cell at 5 of 5, medians of 1 to 6
+files, and zero runs leaving their boundary.
+
+The pre-registered consequence is that the migration does not happen. Three to five days of
+work, priced at 30 to 80 usd of tokens starting from a clean session, would have bought a
+comparison against an arm that is already at the top of every axis being compared.
+
+### The cell that was supposed to hurt did not
+
+`cr4` was chosen because it is the case BPT should lose: one function, two callers, and the
+rule has to change for one caller and stay for the other. The island rule says a behavior never
+reads another behavior, and this change cannot be made correctly without knowing about the
+second caller.
+
+Five runs, two different correct strategies, neither breaking the other caller. Three runs
+added a defaulted parameter to the shared function, so the untouched caller keeps its old
+behavior. One run never touched the shared function at all and did the arithmetic at the call
+site. Both are defensible, both passed, and both stayed inside the boundary.
+
+### What nothing in 25 runs did
+
+No run touched a file outside its pre-registered boundary. No run moved any of the 9
+pre-existing failures, in either direction. No run modified anything under `tests/`, which was
+forbidden by the request. The number BPT exists to improve, how often a change reaches for a
+file outside its declared island, came back at zero without BPT.
+
+### The reading that is sharper than "BPT is useless"
+
+Every request stated every rule its hidden suite checked. That is a contract, written in prose,
+handed to the conventional arm for free. It was done deliberately, because leaving a rule
+implicit is what voided 30 runs of experiment 03, and it was recorded as a bias before the
+runs rather than discovered after them.
+
+So the honest statement of what happened is not that the layout does not matter. It is that
+**given a precise specification, the layout did not matter measurably here.** The specification
+did the work.
+
+That lines up with experiment 02, where the contract notation earned its keep on a real
+measurement (`type: money` produced `Decimal` 5 of 5, against 0 of 5 for prose plus
+`type: string`). Two experiments now point the same way: the part of BPT with evidence behind
+it is the contract, and the part still without any is the tree.
+
+### What this does not decide
+
+**The other half of the bet is untouched.** The hypothesis has two clauses, less context per
+change and independent changes running in parallel without coordination. This experiment
+measured the first one only. Nothing here says anything about the second.
+
+**Size.** The codebase is 5,300 lines of application code. BPT's argument is about context
+limits, and 5,300 lines does not come close to stressing them. A ceiling at this size is not
+evidence of a ceiling at 50,000 or 500,000 lines, and the most likely place for the next honest
+test is a codebase big enough that whole-repository reasoning stops being free.
+
+**One pass, nothing executed.** The arm could not run the suite, so this is first-pass
+navigation and correctness, not repair. `./bpt run` has a three-attempt loop with findings fed
+forward, and that loop is untested by this.
+
+**Sonnet only**, as pre-registered, and the ban held: no Opus runs were added afterwards.
+
+**`cr5` was easier than it looked.** The injected bug was a case drift, `"Active"` where the
+rest of the code writes `"active"`. Every run found it with two greps and one file read. That
+cell therefore measured whether a regular expression finds a case typo, not whether an agent
+can cross a domain boundary. The limitation was named in the pre-registration in the abstract
+and it landed in the concrete. The cell is not voided, because all five runs agreed and the
+number is true for that instance, and voiding a cell for producing an inconvenient result is
+how a favourite hypothesis wins. A harder instance, a rounding or a timezone or a sign, would
+need its own pre-registration.
+
+### How the instrument was checked before the result was believed
+
+A 25 of 25 deserves more suspicion than a mixed table, so the instrument was made to fail on
+purpose.
+
+Each hidden suite was proved both ways before the first run: red against the untouched
+repository, green against a reference implementation written for that purpose. Every red was a
+failing assertion on an API response, never an import or fixture error, because a suite that
+crashes proves nothing about the arm it crashes on.
+
+After the sweep, a patch that applies cleanly and changes nothing relevant was pushed through
+the whole scoring path. It came back with the suite failing 3 of 4 and the gate green, which is
+exactly right: harmless change, no fix. A patch that does not apply at all is recorded as such
+and scored as a failure. The gate's own output text is stored in every scored run, so
+"equivalent: 353 pass and 9 fail" is evidence rather than a boolean somebody set.
+
+### What changed in the repository because of this
+
+The migration is cancelled. The root README's hypothesis section now says that half the bet has
+been tested once, in one direction, and what came back.

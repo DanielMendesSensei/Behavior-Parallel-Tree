@@ -144,28 +144,51 @@ away, because context is the resource under dispute.
 
 ## Experiment 03: island with and without an exemplar
 
-Three nodes of comparable size, none of them implemented yet, plus one finished and reviewed
-node used as the exemplar.
+This is the only experiment here that tests a **principle** of BPT rather than a notation.
+The island rule says a behavior never reads another behavior. A model learns from examples in
+its context. Those two pull against each other, and nothing in experiments 01 or 02 touched it.
 
-- arm A, pure island (BPT as written): the node folder, its own contract, the contracts it
-  consumes, the kernel read-only
-- arm B, island plus exemplar: the same, plus the finished node in full
+**The fixture.** A small codebase of its own, in `03-exemplar/fixture/`, rather than this
+repository's `apps/`, so that the template keeps shipping empty and the experiment stays
+reproducible by anyone who clones it. It has one kernel (`AppError`, `require_session`, a
+`Store`), one finished and reviewed behavior used as the exemplar (`note.list`, contract plus
+implementation), and three targets that exist only as a contract and a spec: `note.detail`,
+`tag.list`, `note.archive`.
 
-5 runs per cell, same model, same task.
+**The arms.** Identical in everything except one block of the prompt.
 
-Measured: first-attempt success, structural consistency against the fixed ten-item checklist
-in `03-exemplar/checklist.md`, and tokens spent, because the exemplar costs context and the
-gain has to cover that cost.
+- **arm A, pure island:** the contract, the spec, and the kernel read-only. Exactly what BPT's
+  context budget allows.
+- **arm B, island plus exemplar:** the same, plus the finished `note.list` in full.
+
+Three targets, five runs per arm per target, 30 runs, one model.
+
+**What is measured.**
+
+- **first-attempt success**: the target's scenarios run against what came back. Byte identical
+  in both arms, behavior only, never looking at the notation. Each suite was proved both ways
+  before the first run: green against a reference implementation, red against a stub.
+- **structural consistency**: the ten items in `03-exemplar/checklist.md`, scored over the
+  items that apply.
+- **tokens**: the exemplar costs context, so any gain has to cover what it spends.
+
+**One model, and no fishing.** Sonnet, for the same reason as experiment 02 and with the same
+ban: if the gap between arms falls inside the within-arm spread, the answer is "could not
+measure", and the other model does not get added afterwards to hunt for a difference.
 
 **Decision criteria, fixed in advance:**
 
-- Arm B wins on consistency and on first-attempt success by a margin that covers the
-  exemplar's token cost: the exemplar joins the context budget as a rule, and the rulebook
-  changes.
-- Arm B wins on consistency alone, without covering the cost: the exemplar becomes optional,
-  recommended past some node count.
-- The arms sit inside the baseline variance: the pure island rule stays and the contradiction
-  raised against it was wrong.
+- **Arm B wins on consistency and on first-attempt success**, by more than the within-arm
+  spread, and the win covers the exemplar's token cost: the exemplar joins the context budget
+  as a rule, and `docs/RULEBOOK.md` principle 5 gains a sentence saying an island is shown one
+  sibling on purpose.
+- **Arm B wins on consistency alone**: the exemplar becomes recommended rather than required,
+  and the rulebook says when to reach for it instead of saying always.
+- **Arm B wins nothing that covers its token cost**: the pure island rule stays exactly as
+  written, and the sharpest criticism this repository made of itself was wrong. That outcome
+  gets written down in as much detail as the other two.
+- **First-attempt success hits the ceiling in both arms**, as it did in experiment 02: that
+  half is reported as undiscriminating rather than as a tie, and consistency decides alone.
 
 ## Layout
 

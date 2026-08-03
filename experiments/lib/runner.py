@@ -295,8 +295,16 @@ def main():
         for arm in arms:
             if args.only_arm and arm["name"] != args.only_arm:
                 continue
+            # Variables layer: plan-wide includes, then whatever the cell varies,
+            # then whatever the arm varies. An experiment that changes the
+            # contract per arm and one that changes the context per arm are the
+            # same mechanism, so neither gets its own special case.
             variables = dict(shared)
-            if arm.get("contract"):
+            for source in (cell.get("vars") or {}, arm.get("vars") or {}):
+                for name, path in source.items():
+                    with open(os.path.join(base, path), encoding="utf-8") as fh:
+                        variables[name] = fh.read()
+            if arm.get("contract"):  # shorthand kept for experiment 02
                 with open(os.path.join(base, arm["contract"]), encoding="utf-8") as fh:
                     variables["contract"] = fh.read()
             prompt = render_prompt(template, variables)

@@ -1,0 +1,39 @@
+id: note.archive
+version: 1
+kind: command
+title: Archive a note
+authorization:
+  required: true
+  roles: [member]
+
+input:
+  note_id: { type: string, required: true }
+
+output:
+  id:       { type: string }
+  title:    { type: string }
+  archived: { type: boolean }
+
+rules:
+  - id: idempotence-refused
+    describe: archiving a note that is already archived is an error, not a no-op
+  - id: persisted
+    describe: the change is written through the store, not only returned
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: note_id missing or empty
+  - code: NOT_FOUND
+    category: user
+    retryable: false
+    when: no note has that id
+  - code: ALREADY_ARCHIVED
+    category: user
+    retryable: false
+    when: the note is already archived
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing

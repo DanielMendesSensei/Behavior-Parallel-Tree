@@ -1,0 +1,83 @@
+# Experiment 03: the island, with and without an exemplar.
+#
+# Fixed before the first run. The only thing that differs between the two arms
+# is whether a finished sibling behaviour is in the context. Contract, spec,
+# kernel, file rules and scored scenarios are byte identical.
+revision: 1
+experiment: 03-exemplar
+runs_dir: runs
+
+# Sonnet only, same reason as experiment 02 and the same ban: if the gap between
+# arms falls inside the within-arm spread, the answer is "could not measure" and
+# Opus does not get added afterwards to hunt for a difference.
+n: 5
+models: [sonnet]
+
+arms:
+  - name: arm-a-island
+    vars: { exemplar: fixture/no-exemplar.txt }
+  - name: arm-b-exemplar
+    vars: { exemplar: fixture/exemplar.md }
+
+includes:
+  kernel: fixture/kernel.py
+
+# One cell per target behaviour. Three of them, of comparable size, none of them
+# implemented anywhere. Each has its own scaffold holding the kernel, the seed
+# data and the scenarios, all identical across arms.
+#
+# The suites were proved both ways before the first run: green against a
+# reference implementation of each target, red against a stub that returns an
+# empty dict.
+cells:
+  - name: note-detail
+    prompt: prompts/implement.md
+    vars:
+      contract: fixture/contracts/note/detail/contract.yaml
+      spec: fixture/contracts/note/detail/spec.md
+    harness:
+      scaffold: scaffolds/note-detail
+      artifact: behavior.py
+      verify: [python3, -m, unittest, discover, -p, "test_*.py"]
+
+  - name: tag-list
+    prompt: prompts/implement.md
+    vars:
+      contract: fixture/contracts/tag/list/contract.yaml
+      spec: fixture/contracts/tag/list/spec.md
+    harness:
+      scaffold: scaffolds/tag-list
+      artifact: behavior.py
+      verify: [python3, -m, unittest, discover, -p, "test_*.py"]
+
+  - name: note-archive
+    prompt: prompts/implement.md
+    vars:
+      contract: fixture/contracts/note/archive/contract.yaml
+      spec: fixture/contracts/note/archive/spec.md
+    harness:
+      scaffold: scaffolds/note-archive
+      artifact: behavior.py
+      verify: [python3, -m, unittest, discover, -p, "test_*.py"]
+
+executor:
+  command: claude
+  args:
+    - -p
+    - --safe-mode
+    - --tools
+    - ""
+    - --strict-mcp-config
+    - --disable-slash-commands
+    - --no-session-persistence
+    - --output-format
+    - json
+    - --model
+    - "{model}"
+    - --system-prompt
+    - >-
+      You are answering a technical question. You have no tools, no file system
+      and no repository: everything you produce must appear in your reply as
+      text.
+  prompt_via: stdin
+  timeout_s: 600

@@ -1,0 +1,39 @@
+id: note.detail
+version: 1
+kind: query
+title: Read one note
+authorization:
+  required: true
+  roles: [member]
+
+input:
+  note_id: { type: string, required: true }
+
+output:
+  id:       { type: string }
+  title:    { type: string }
+  body:     { type: string }
+  archived: { type: boolean }
+  tags:
+    type: array
+    of: { type: string }
+
+rules:
+  - id: tags-by-name
+    describe: the tag names come back ordered by name ascending
+  - id: archived-still-readable
+    describe: an archived note is still returned, with archived true
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: note_id missing or empty
+  - code: NOT_FOUND
+    category: user
+    retryable: false
+    when: no note has that id
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing

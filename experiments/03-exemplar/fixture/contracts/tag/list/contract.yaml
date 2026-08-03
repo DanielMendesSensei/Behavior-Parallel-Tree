@@ -1,0 +1,38 @@
+id: tag.list
+version: 1
+kind: query
+title: List tags with their note count
+authorization:
+  required: true
+  roles: [member]
+
+input:
+  min_count: { type: integer, min: 0, default: 0 }
+
+output:
+  items:
+    type: array
+    of:
+      object:
+        id:    { type: string }
+        name:  { type: string }
+        count: { type: integer }
+  total: { type: integer }
+
+rules:
+  - id: ordering
+    describe: tags ordered by name ascending
+  - id: count-excludes-archived
+    describe: the count of a tag counts only notes that are not archived
+  - id: min-count-inclusive
+    describe: a tag is kept when its count is greater than or equal to min_count
+
+errors:
+  - code: INVALID_PARAMETER
+    category: validation
+    retryable: false
+    when: min_count below zero
+  - code: UNAUTHORIZED
+    category: user
+    retryable: false
+    when: session missing

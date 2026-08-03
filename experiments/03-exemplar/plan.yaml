@@ -3,7 +3,22 @@
 # Fixed before the first run. The only thing that differs between the two arms
 # is whether a finished sibling behaviour is in the context. Contract, spec,
 # kernel, file rules and scored scenarios are byte identical.
-revision: 1
+#
+# revision 2. Revision 1 ran 30 times and was voided, with its output kept in
+# runs-void-r1/. The fixture was underspecified: nothing in the contract, the
+# spec or the kernel said how a note relates to a tag, so both arms had to guess
+# it. One guessed `t.get("note_id")`, which degrades quietly to an empty list;
+# another guessed `t["note_id"]`, which raises. The gap between the arms was
+# therefore dominated by which key a run invented and by whether it used .get or
+# a bracket, which is a coin flip about defensive coding and not the thing this
+# experiment exists to measure.
+#
+# The fix is symmetric and lands in the one place both arms already read: the
+# kernel now documents the shape of the rows it hands back, including that the
+# relation lives on the note as `tag_ids`. Nothing else moved, and the three
+# suites were re-proved green against a reference implementation and red against
+# a stub before this revision ran.
+revision: 2
 experiment: 03-exemplar
 runs_dir: runs
 

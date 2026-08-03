@@ -240,10 +240,101 @@ afterwards would erase the only evidence for the change.
 
 ## Experiment 03: island with and without an exemplar
 
-Not run. Material confirmed to exist: `content.deliver` and `vault.sync` are implemented on
-both sides with tests and can serve as the exemplar.
+### What was run
 
-Baseline variance: not measured yet.
+Revision 2 of the plan, on 2026-08-03, Sonnet 5 only as pre-registered. 30 runs, 0 failures,
+0.43 usd. Three targets, two arms, five runs per cell. Revision 1 ran 30 times and was voided;
+its output is in `03-exemplar/runs-void-r1/` and the reason is below.
+
+### First-attempt success: the ceiling, as predicted
+
+**30 of 30 answers passed every scenario, in both arms.** Not one run needed a second attempt,
+in either arm, on any of the three targets.
+
+**Criterion 4 hit**, the one written for exactly this case: it is reported as undiscriminating
+rather than as a tie, and consistency decides alone. The prediction that it would hit was
+written down before the run, which is the only reason it is worth anything.
+
+### Structural consistency: the pre-registered bar was not cleared
+
+| Item | arm A, pure island | arm B, with exemplar |
+| --- | --- | --- |
+| module docstring in the exemplar's form | 3/15 | 15/15 |
+| `from kernel import ...`, not a plain import | 15/15 | 15/15 |
+| `require_session` first in the public function | 15/15 | 15/15 |
+| validation isolated in a helper | 4/5 | 5/5 |
+| helpers private | 8/8 | 15/15 |
+| contract literals hoisted to constants | 1/5 | 5/5 |
+| every raise is `AppError` with a declared code | 15/15 | 15/15 |
+| output built as a dict literal in place | 15/15 | 15/15 |
+| ordering as `sorted(..., key=...)` | 0/10 | 5/10 |
+| no class, no module level mutable state | 15/15 | 15/15 |
+
+| | arm A | arm B |
+| --- | --- | --- |
+| consistency, mean | 78% | 96% |
+| note-detail | 76% (spread 14) | 88% (spread 0) |
+| tag-list | 74% (spread 30) | 100% (spread 0) |
+| note-archive | 83% (spread 0) | 100% (spread 0) |
+| chars written, mean | 821 | 1,245 |
+| cost of 15 answers | 0.188 usd | 0.245 usd |
+
+The gap between the arms is 18 points. The baseline, defined in advance as the widest
+within-arm range across the cells, is 30 points, and it comes from arm A on `tag-list`.
+**18 is inside 30, so on the pre-registered rule this is "could not measure",** and the
+outcome that fires is the third one: the pure island rule stays exactly as written.
+
+That is not the reading I expected to write. The mean gap is large, every per-target
+comparison favours arm B, and two items are not close. None of that matters: the rule that
+decides was fixed before the numbers existed, precisely so that a favourable-looking table
+could not talk its way past it. The baseline definition is arguably too blunt here, because it
+applies the noisiest cell's spread to every cell. Sharpening it is a change to make **before**
+the next run, not after this one.
+
+Rubric integrity: every item was decided by walking the syntax tree rather than matching text,
+and an independent model reading of the judgement-based items agreed with it **92%** of the
+time, above the 80% the protocol requires.
+
+### The finding nobody pre-registered
+
+Arm B's within-arm spread is **zero on all three targets**. Fifteen answers, three different
+behaviours, and within each behaviour every answer scored identically. Arm A's spreads are 0,
+14 and 30.
+
+The exemplar did not only move the average. It removed the variance. A rule about whether a
+gap exceeds the noise has nothing to say about one arm having no noise at all, and that is a
+different claim from the one this experiment was built to test.
+
+It is written here as an observation and not as a result, because it was not pre-registered
+and reinterpreting a run around something spotted afterwards is the failure the whole protocol
+exists to prevent. If it is worth chasing, it is worth its own experiment, with variance as
+the declared primary metric and a criterion written before the first run.
+
+### What it cost
+
+The exemplar is not free: arm B wrote 52% more characters and cost 30% more for the same
+fifteen behaviours. Any future decision to put a sibling in the context budget has to carry
+that number with it.
+
+### The void, and the lesson that repeats
+
+Revision 1's arms came back separated: with the exemplar, two of three targets scored worse,
+one of them 3 of 8 against 7 of 8, stable across all five runs.
+
+It was the fixture. Nothing in the contract, the spec or the kernel said how a note relates to
+a tag, so both arms invented it. One invented `t.get("note_id")`, which returns None and
+degrades quietly to an empty list. Another invented `t["note_id"]`, which raises and takes
+five tests down with it. What separated the arms was which key a run made up and whether it
+reached for `.get` or a bracket: a coin flip about defensive coding, measured to three
+significant figures.
+
+The fix was symmetric and landed in the one file both arms already read: the kernel now
+documents the shape of the rows it returns. Both arms gained the same sentence.
+
+That is twice in three experiments that the summary table looked healthy and the raw output
+said otherwise. In experiment 01 an empty answer shrank the sample without failing. Here an
+underspecified task turned a coin flip into a stable difference between arms. **An experiment
+does not warn you when it is measuring the wrong thing. It reports it cleanly.**
 
 ## A lesson worth more than the experiment
 

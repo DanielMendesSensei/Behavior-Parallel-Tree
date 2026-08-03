@@ -1,0 +1,690 @@
+[
+  {
+    "target": "note-archive",
+    "arm": "arm-a-island",
+    "run": 0,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module's docstring opens with \"Archive a note\" (a description) followed by a colon and \"contract note.archive\" \u2014 the reverse of the reference's pattern of leading with the behaviour id (e.g. note.list) then a colon then a short statement of what is returned. It has no helpers, so the helper-naming and stray-abstraction checks pass vacuously."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-a-island",
+    "run": 1,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The docstring inverts the reference's order: it leads with a plain-English description (\"Archive a note\") then a garbled id-like fragment (\"node.archive behavior\"), rather than leading with the behaviour id followed by a colon and a statement of what is returned. The module has no private helpers, and contains no classes, dataclasses, or module-level mutable state."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-a-island",
+    "run": 2,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The docstring opens with \"Archive a note: contract note.archive.\" \u2014 this inverts the reference's pattern of leading with the behaviour id (e.g. \"note.archive\") followed by a colon and a statement of what is returned, rather than a restated action name followed by the contract label."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-a-island",
+    "run": 3,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module under review has no module-level docstring at all (the docstring shown belongs to the archive_note function, not the module), so it doesn't open with a behaviour id, colon, and return statement the way the reference's module docstring does. It defines no helpers, so that question is vacuously true, and it contains no classes, dataclasses, or module-level mutable state."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-a-island",
+    "run": 4,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The docstring reads \"Behavior: note.archive \u2014 archive a note.\" \u2014 it prefixes \"Behavior:\" rather than leading with the id itself, uses an em dash instead of a colon before the statement, and the statement describes the action (\"archive a note\") rather than what the behaviour returns, unlike the reference's \"note.list: one page of the member's notes, ordered by title.\" No private helpers exist, so the naming question is vacuously true. There is no class, dataclass, module-level mutable state, or extraneous helper."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-b-exemplar",
+    "run": 0,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The reviewed module's docstring opening (\"mark one of the member's notes as archived\") states the action performed rather than characterizing the returned output, unlike the reference's \"one page of the member's notes, ordered by title\" which describes the shape/content of the return value."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-b-exemplar",
+    "run": 1,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module's docstring opens with the behaviour id and a colon, but the clause after it (\"mark one of the member's notes as archived\") describes the action performed, not what the behaviour returns \u2014 unlike the reference's \"one page of the member's notes, ordered by title,\" which names the returned data."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-b-exemplar",
+    "run": 2,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module's docstring opening describes the action performed (\"mark one of the member's notes as archived\") rather than characterizing what the behaviour returns, unlike the reference's \"one page of the member's notes, ordered by title,\" which describes the shape/content of the output."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-b-exemplar",
+    "run": 3,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module's docstring opens with the behaviour id and a colon, but the clause after it describes the action performed (\"archive one live note for the signed in member\") rather than what the behaviour returns, unlike the reference's \"one page of the member's notes, ordered by title,\" which describes the return shape."
+    }
+  },
+  {
+    "target": "note-archive",
+    "arm": "arm-b-exemplar",
+    "run": 4,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": null,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The reference's opening line states what the behaviour returns (\"one page of the member's notes, ordered by title\"). The reviewed module's opening line instead states what the behaviour does (\"mark one of the member's notes as archived\"), not what it returns (e.g. the archived note's id/title/archived fields), so it doesn't follow the same form."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-a-island",
+    "run": 0,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module has no module-level docstring at all (the file opens directly with the import statement, then the function definition); the docstring seen belongs to note_detail, not the module, so it doesn't open with a behaviour id and colon like the reference's module docstring does."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-a-island",
+    "run": 1,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": false,
+      "no_stray_abstraction": true,
+      "note": "The module has no module-level docstring at all, so it doesn't open with a behaviour id/colon/return statement. _tag_names_for is named for what it returns, but _validate_note_id is named for the action it performs (validation) rather than for a return value, since it returns nothing."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-a-island",
+    "run": 2,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module has no module-level docstring at all, so it does not open with a behaviour id, colon, and return statement like the reference does."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-a-island",
+    "run": 3,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module docstring opens with \"note.detail: read one note by id, with its tag names.\" matching the id+colon+short-return-statement pattern. It defines no private helpers, so the naming question is vacuously true. No classes, dataclasses, or module-level mutable state are present; the tags_by_id dict is a local variable inside the function."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-a-island",
+    "run": 4,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": null,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The module docstring uses an em dash (\"note.detail \u2014 read one note...\") rather than a colon after the behaviour id, unlike the reference's \"note.list: ...\". It has no private helpers, so the naming question is vacuously true. No classes, dataclasses, or module-level mutable state are present."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-b-exemplar",
+    "run": 0,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": ""
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-b-exemplar",
+    "run": 1,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module docstring follows the \"behaviour_id: short return statement\" pattern; helpers _validated_note_id and _tag_names are named for their return values, mirroring _validated_input/_matching; no classes, dataclasses, or module-level mutable state, and both helpers correspond to needs described in the docstring (validation, tag lookup)."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-b-exemplar",
+    "run": 2,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module opens with \"note.detail: read one note, with the names of its tags.\" matching the id-colon-statement form. Helpers _validated_note_id and _tag_names are named for their return values. No classes, dataclasses, or module-level mutable state; both helpers align with the stated contract (validating note_id, resolving tag names)."
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-b-exemplar",
+    "run": 3,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true
+    }
+  },
+  {
+    "target": "note-detail",
+    "arm": "arm-b-exemplar",
+    "run": 4,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": null,
+      "helpers_private": true,
+      "literals_as_constants": null,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-a-island",
+    "run": 0,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": false,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": false,
+      "no_stray_abstraction": true,
+      "note": "Docstring opens with \"Behavior:\" then the id joined by \"--\" rather than leading with the id and a colon as the reference does. Of the two helpers, _live_note_counts is named for what it returns, but _validate_min_count is named for the action it performs (validate) rather than for the value it returns, unlike the reference's _validated_input/_matching pattern."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-a-island",
+    "run": 1,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": false,
+      "no_stray_abstraction": true,
+      "note": "_validate_min_count is named as an imperative action (\"validate X\") rather than for the value it returns (contrast with _validated_input's past-participle/noun form); _live_counts does follow the returned-value naming pattern."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-a-island",
+    "run": 2,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": false,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": false,
+      "no_stray_abstraction": true,
+      "note": "Docstring opens \"tag.list: list tags with their live note count.\" matching the id+colon+return-statement form. However _validate_min_count is named as an imperative action (\"validate min count\") rather than for the thing it returns (should read like _validated_min_count to match _validated_input's pattern); _count_by_tag does follow the return-named convention, but since not all helpers do, the answer is false. No classes, dataclasses, or module-level mutable state are present, and both helpers stay within the described contract scope."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-a-island",
+    "run": 3,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": false,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": false,
+      "no_stray_abstraction": true,
+      "note": "Docstring is framed as \"Behavior for tag.list: ...\" rather than leading directly with the behaviour id \"tag.list:\" as the reference does. The helper _validate_min_count is named for the action it performs, not for the value it returns (contrast with _validated_input/_matching, which are named as the returned nouns)."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-a-island",
+    "run": 4,
+    "items": {
+      "docstring": false,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": false,
+      "helpers_private": true,
+      "literals_as_constants": false,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": false,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": false,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "The docstring prepends the word \"Behavior\" before the id (\"Behavior tag.list:\") rather than opening directly with the id itself as the reference does (\"note.list:\")."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-b-exemplar",
+    "run": 0,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": true,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module opens with \"tag.list: ...\" matching the id-colon-summary form. _validated_input mirrors the reference name exactly; _counts is named for what it returns (a tag-id-to-count map), analogous to _matching. No classes, dataclasses, or mutable module state beyond the immutable DEFAULT_MIN_COUNT constant; the _counts helper covers filtering logic implied by the min_count contract parameter."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-b-exemplar",
+    "run": 1,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": true,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": ""
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-b-exemplar",
+    "run": 2,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": true,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module docstring follows the \"behaviour_id: short return statement\" form. Helpers _validated_input and _counts are both named for what they return (validated input, counts map). No classes, dataclasses, or mutable module state beyond an immutable default constant, mirroring the reference's DEFAULT_PAGE/DEFAULT_SIZE/MAX_SIZE pattern."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-b-exemplar",
+    "run": 3,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": true,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module docstring follows the \"id: returns\" form; _validated_input and _counts are both named for their return values; no classes, mutable state, or extraneous helpers beyond the contract's needs."
+    }
+  },
+  {
+    "target": "tag-list",
+    "arm": "arm-b-exemplar",
+    "run": 4,
+    "items": {
+      "docstring": true,
+      "import_shape": true,
+      "session_first": true,
+      "validation_isolated": true,
+      "helpers_private": true,
+      "literals_as_constants": true,
+      "errors_via_apperror": true,
+      "output_inline": true,
+      "ordering_idiom": true,
+      "no_stray_abstraction": true
+    },
+    "judge": {
+      "docstring_form": true,
+      "helpers_named_for_what_they_return": true,
+      "no_stray_abstraction": true,
+      "note": "Module docstring follows the \"behaviour_id: short return statement\" form. Helpers _validated_input and _counts are named for what they produce/return, mirroring the reference's _validated_input/_matching pattern. No classes, dataclasses, or mutable module state beyond a plain int constant; the _counts helper directly serves the contract's live/count aggregation with no extra unrequested behavior."
+    }
+  }
+]

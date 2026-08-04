@@ -220,6 +220,16 @@ produced by an agent working alone in its own copy of the same base commit, whic
 parallel work without coordination, so this experiment composes patches that already exist.
 Pre-registration in `06-parallel-composition/README.md`.
 
+## Experiment 07: do different behaviors sharing a module compose?
+
+Experiment 06 came back void, and writing up why exposed the error: its overlapping pairs were
+the treatment, not the control. BPT's parallelism claim is about behaviors, and in a layer-first
+codebase two different behaviors land in the same files, so pairs sharing a module were the
+interesting case and pairs sharing nothing were the trivial one. Reinterpreting 06's numbers now
+would be choosing a meaning after seeing them, so 07 generates its own data: two new cells, ten
+runs, seven pairs that each involve at least one of them, and a positive control registered in
+advance rather than added afterwards. Pre-registration in `07-parallel-shared-registry/README.md`.
+
 ## Layout
 
 ```
@@ -242,6 +252,8 @@ experiments/
     README.md                    same, for the repeat on a larger codebase
   06-parallel-composition/
     README.md                    same, for the composition probe on 05's patches
+  07-parallel-shared-registry/
+    README.md                    same, for the redesigned parallelism test
 ```
 
 ## Running

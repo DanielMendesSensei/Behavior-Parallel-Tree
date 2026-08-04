@@ -495,6 +495,20 @@ repaired.
 | `cr4` shared rule | 5/5 | 4 (3 to 4) | 59,824 | 0.369 (0.316 to 0.425) | 16 | 0 | 0 |
 | `cr5` boundary bug | 5/5 | 1 (1 to 1) | 17,118 | 0.083 (0.082 to 0.089) | 4 | 0 | 0 |
 
+### What each cell cost
+
+| Cell | output tokens | cache read | machine time |
+| --- | --- | --- | --- |
+| `cr1` derived field | 9,353 | 417,205 | 2.0 min |
+| `cr2` new rule | 35,429 | 4,833,778 | 6.8 min |
+| `cr3` new behavior | 16,392 | 1,385,312 | 3.7 min |
+| `cr4` shared rule | 23,702 | 2,057,789 | 5.4 min |
+| `cr5` boundary bug | 3,256 | 226,079 | 1.0 min |
+
+Five runs each. `cr2` alone accounts for more than half the sweep's cache reads, which is the
+same thing the cost column said and the reason is the same: three files to change, two of them
+large, and every one of them staying in context to the end of the run.
+
 ### The one number that answers the question this experiment was for
 
 Files opened per change, experiment 04 first and experiment 05 second, on a codebase 2.6 times
@@ -674,3 +688,69 @@ composed the same way.
 
 Until that runs, the second clause of the hypothesis remains what it has been since the
 beginning: untested.
+
+## What all of this cost
+
+Every number below comes from the run records, not from an estimate. The runner writes the
+model's own usage envelope into each record, so tokens and wall clock are read off a file.
+
+| Experiment | runs | usd | output tokens | cache read | cache written | machine time |
+| --- | --- | --- | --- | --- | --- | --- |
+| 01 hallucination probe | 48 | 5.89 | 256,402 | 23,023 | 28,681 | 50.2 min |
+| 02 notation penalty | 30 | 1.68 | 102,912 | 39,496 | 9,874 | 17.4 min |
+| 03 exemplar | 60 | 0.99 | 48,384 | 109,600 | 27,400 | 9.5 min |
+| 04 conventional ceiling | 25 | 4.08 | 63,983 | 3,868,665 | 321,681 | 16.2 min |
+| 05 ceiling at scale | 25 | 8.48 | 88,132 | 8,920,163 | 737,809 | 19.0 min |
+| 06 parallel composition | 0 | 0.00 | 0 | 0 | 0 | none |
+| 07 parallel shared registry | 10 | 3.34 | 29,536 | 2,860,011 | 337,841 | 7.7 min |
+| **total** | **198** | **24.46** | **589,349** | **15,820,958** | **1,463,286** | **120.0 min** |
+
+The run counts for 01 and 03 include the voided sweeps, 14 and 30 runs respectively, because
+they were paid for and throwing them out of the accounting would understate what being wrong
+costs.
+
+### Where the money actually goes
+
+Look at the two halves of that table and they behave differently.
+
+Experiments 01, 02 and 03 ran with no tools: one prompt, one answer, and the model writing an
+artifact. Their cost tracks output tokens, and cache barely appears. Experiment 01 is the most
+expensive of the three because it asked for whole files, 256,402 tokens of them.
+
+Experiments 04, 05 and 07 ran with tools in a real repository, and the shape inverts. Experiment
+05 wrote 88,132 output tokens and read 8,920,163 from cache, a ratio of about 100 to 1. Almost
+nothing of what you pay for is what the model writes. It is the conversation being re-sent every
+turn as the agent greps, reads, and edits.
+
+That is also why experiment 05 cost twice what 04 did while running the same 25 changes. The
+codebase was 2.6 times bigger, the files it opened were bigger, and every one of those files sat
+in context for the rest of the run.
+
+### Two hours of machine time, and what that number leaves out
+
+The 120 minutes above is model time only: the sum of how long each run took, first token to
+last. Three things are not in it.
+
+Scoring and composition spend no tokens but do spend CPU. The unit is one run of the target
+repository's 934 test suite, about 21 seconds on this machine, and every scored run pays for one
+of those plus its acceptance suite. Experiment 06 spent all of its budget there and none on
+tokens, which is the whole point of that design.
+
+Building the fixtures is not in it either. Writing seven change requests, seven reference
+implementations and seven acceptance suites, and proving each suite red then green, was the bulk
+of the human hours across both phases. The runs are the cheap part, which is the argument for
+probing with them before committing to anything expensive.
+
+And the sessions that designed all of this are not in it. A single long working session in this
+project measured 344 usd of API equivalent, most of it cache, against 7.85 usd of actual
+experiments. The experiments are a rounding error next to the conversation that produced them.
+
+### The cheapest thing here bought the most
+
+Experiment 04 cost 4.08 usd and cancelled three to five days of migration work. Experiment 06
+cost nothing at all and killed a design that would have been the wrong experiment to run. The
+one that cost the most, 05 at 8.48 usd, confirmed a result rather than changing a decision.
+
+That ordering is worth keeping in view. The rule it produced, probe the cheap arm before
+building the expensive one, has now paid for itself twice, and both times the probe was worth
+less than a tenth of what it prevented.

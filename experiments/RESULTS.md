@@ -468,3 +468,144 @@ and scored as a failure. The gate's own output text is stored in every scored ru
 
 The migration is cancelled. The root README's hypothesis section now says that half the bet has
 been tested once, in one direction, and what came back.
+
+## Experiment 05: does the ceiling survive a codebase three times the size?
+
+### What was run
+
+The instrument from experiment 04, unchanged, against a different codebase: a private Django
+and DRF backend of roughly 16,000 lines of application code over 74 files, which is 1.07 MB of
+Python against the 412 KB of experiment 04's arm. That was the whole point. 412 KB fits in a
+200k token window and 1.07 MB does not, so this is the first time the conventional arm was
+asked the question BPT is actually built around.
+
+Same runner, same scorer, same gate, same executor and tool set, same five change request
+shapes, same model, same N of 5, same thresholds. Twenty five runs, 8.48 usd.
+
+Frozen baseline: 934 tests, 932 passing and 2 failing, and the 2 are pre-existing and were not
+repaired.
+
+### The numbers
+
+| Cell | first-attempt | files opened | repo ingested | usd | turns | outside boundary | gate broke |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cr1` derived field | 5/5 | 1 (1 to 1) | 8,352 | 0.107 (0.077 to 0.136) | 7 | 0 | 0 |
+| `cr2` new rule | 5/5 | 5 (4 to 6) | 151,181 | 0.794 (0.717 to 0.886) | 21 | 5 | 0 |
+| `cr3` new behavior | 5/5 | 4 (3 to 4) | 94,957 | 0.343 (0.184 to 0.435) | 12 | 0 | 0 |
+| `cr4` shared rule | 5/5 | 4 (3 to 4) | 59,824 | 0.369 (0.316 to 0.425) | 16 | 0 | 0 |
+| `cr5` boundary bug | 5/5 | 1 (1 to 1) | 17,118 | 0.083 (0.082 to 0.089) | 4 | 0 | 0 |
+
+### The one number that answers the question this experiment was for
+
+Files opened per change, experiment 04 first and experiment 05 second, on a codebase 2.6 times
+larger: `cr1` 3 then 1, `cr2` 4 then 5, `cr3` 6 then 4, `cr4` 4 then 4, `cr5` 1 then 1.
+
+It did not move. On three of five shapes it fell. The agent does not read more of a repository
+because the repository is bigger, because it never reads the repository: it greps for a symbol,
+gets a path back, and opens that file. Size is paid by the search index, not by the context.
+
+That is the claim BPT is built to make, measured on the arm that does not have BPT.
+
+### What did move, and it is worth naming
+
+Characters of repository ingested per run, 04 then 05: `cr1` 12,268 then 8,352, `cr2` 20,995
+then 151,181, `cr3` 26,520 then 94,957, `cr4` 33,394 then 59,824, `cr5` 11,401 then 17,118.
+Cost followed, most sharply on `cr2`, from 0.201 to 0.794 usd.
+
+So the honest split is that the count of files did not grow with the codebase but the volume
+behind each answer did, up to seven times on the heaviest cell. `cr2` is the three file change,
+and it is the one where the agent had to read a large view module and a large service module in
+full rather than a serializer. A bigger codebase makes individual files bigger, and that is
+where the cost went.
+
+Whether a declared boundary would have cut that volume is not something this sweep can say. It
+would need the arm that experiment 04 cancelled.
+
+### Which pre-registered criterion was hit
+
+By the letter, none cleanly, and this is where it has to be read carefully rather than rounded
+in the convenient direction.
+
+The ceiling condition required first-attempt success of at least 23 of 25, no cell below 4 of
+5, a median of 8 or fewer files opened, and **at most one run of the 25 touching a file outside
+its boundary**. The first three passed by a wide margin: 25 of 25, no cell below 5 of 5, medians
+of 1 to 5. The fourth did not. Five runs went outside, all of them in `cr2`.
+
+The discriminate condition says a cell discriminates when 2 or more of its 5 runs change a file
+outside the boundary. `cr2` did, in all five. So exactly one cell discriminates, and the
+pre-registered consequence of exactly one is that it is reported as one usable cell and no arm
+is built on it.
+
+Both readings land in the same place, which is the only reason this is reportable at all: no
+BPT arm is built.
+
+### What the boundary violation actually was
+
+All five `cr2` runs wrote a Django migration for the new `block_reason` choice, in
+`apps/downloads/migrations/`, which is not in that cell's pre-registered file set.
+
+The file set is the file list of the reference implementation, and the reference did not write
+one, because the test suite does not check for pending migrations. The five runs did. Changing
+`choices` on a Django model does call for a migration, so the runs were more complete than the
+reference they are measured against.
+
+The pre-registration says a run outside its set "is not automatically wrong, it is counted and
+read with judgement, because a defensible change can land somewhere the reference did not go".
+That sentence was written for this, and it is being honoured rather than quietly used: the five
+are counted, the criterion they trip is reported as tripped, and the judgement is written here
+where it can be argued with. Reading those five as evidence that a declared boundary would have
+helped would be backwards. A boundary that forbade the migration would have made the change
+worse.
+
+The defect is in the boundary definition, and it belongs to us. Deriving the intended file set
+from a reference implementation assumes the reference is the most complete correct answer, and
+here it was not.
+
+### The gate aged out mid sweep, and what was done about it
+
+The pre-registration named a risk before the first run: both baseline failures are date
+dependent. That risk fired the same evening. At 00:00 UTC the two flipped from fail to pass and
+the gate started calling every run damaged, including runs that changed nothing near them.
+
+The check that settled it: the untouched arm, with no patch applied, fails its own baseline
+after that hour. A gate that condemns a pristine repository is measuring the clock.
+
+The two ids were exempted and all 25 runs were scored again, which costs nothing because
+scoring spends no tokens. The amendment in `05-ceiling-at-scale/README.md` records what changed,
+why it is a repair rather than a loosened criterion, and what the exemption costs: the gate can
+no longer speak about those two tests.
+
+Checked afterwards, across all 25 runs: no run moved any test other than those two, and no run
+touched anything under `tests/`. So the exemption hid nothing.
+
+### How the instrument was checked before the result was believed
+
+A second 25 of 25 deserves more suspicion than the first one did.
+
+Every hidden suite was proved both ways before the first run: red against the untouched
+repository, green against a reference written for that cell, with the gate clean afterwards in
+all five. The `cr5` bug was chosen by measuring coverage rather than by taste, planted on one of
+the five lines the existing suite never executes, and then verified invisible by running the
+gate with it applied. Experiment 04's `cr5` bug was a case drift that a regex finds, and that
+cell measured less than it should have. This one has to be found by following an endpoint into
+the service layer.
+
+After the sweep, a patch that applies cleanly and changes nothing relevant was pushed through
+the whole scoring path. It came back with the acceptance suite failing and the gate green,
+scoring 0 of 1, which is exactly right: harmless change, no fix, no credit.
+
+### What this does not decide
+
+The second limitation of experiment 04 is untouched and is now the one that matters most. Every
+request still states every rule its hidden suite checks. That is a contract written in prose and
+handed to the conventional arm for free, and two experiments have now produced ceilings under
+that condition. The fair summary after 05 is the same as after 04, with more weight behind it:
+a precise specification does the work, and the layout has not been shown to add anything on top
+of it, at 5,300 lines or at 16,000.
+
+The framework also moved with the size, FastAPI to Django, so a difference between the two
+sweeps could not have been attributed to size alone. There was no difference to attribute,
+which is the reading that survives that confound rather than falling to it.
+
+And the second half of the bet, independent changes running in parallel without coordination,
+has still never been tested.

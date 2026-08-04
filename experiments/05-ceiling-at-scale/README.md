@@ -220,6 +220,44 @@ codebase, which is real work and is not being claimed here.
    this experiment was designed to cross. It is not a million line monolith, and nothing here
    is a statement about one.
 
+## Amendment, after the runs and before any score was accepted
+
+Everything above this heading is the pre-registration as committed before the first run, and
+none of it was edited afterwards. This section was added later and says what changed and why.
+
+**What changed:** the equivalence gate now exempts two test ids, the pair that was already
+failing in the frozen baseline. Nothing else moved. No threshold, no criterion, no cell, no
+prompt, and no run.
+
+**Why:** the risk named above, that both baseline failures are date dependent, materialised
+the same evening the sweep ran. At 00:00 UTC, which is 21:00 local time here, both tests
+flipped from failing to passing, and the gate began reporting every run as damage. It was not
+the runs. The untouched arm, with no change applied to it at all, fails its own baseline after
+that hour. Those two tests read "yesterday" from Django's UTC clock while the rows they create
+are stamped in local time, so they change sides during the window where the two dates disagree.
+
+A gate that condemns an untouched repository is measuring the clock, not the arm. Exempting
+exactly those two ids is what the exemption mechanism is for: they were failing before anything
+was touched, none of the five change requests reaches the code they cover, and their state
+tracks wall clock rather than the work. No run was fired again, because scoring costs nothing
+to repeat.
+
+**What it costs, said plainly:** the gate can no longer speak about those two tests, so a run
+that genuinely broke them would now pass unnoticed. That is a real hole and it is the price of
+the repair.
+
+**Why this is not the thing experiment 04 refused to do.** Experiment 04 declined to add an
+exemption because its public pre-registration had never named one, so writing concrete ids
+after the runs began would have been loosening a criterion mid experiment. The difference here
+is not that the rule was bent more politely. It is that the failure being exempted was proved,
+after the sweep, to be independent of every arm and every change: the pristine repository fails
+it too. An exemption that a control proves is about the instrument is a repair. One that only
+the results argue for is not.
+
+**What it did not rescue.** The exemption changes the gate column and nothing else. Checked
+afterwards across all 25 runs: no run changed the state of any test other than those two, and
+no run touched anything under `tests/`. So the repair masked nothing that was there.
+
 ## When this is finished
 
 1. This file is committed with a timestamp earlier than the first recorded run.

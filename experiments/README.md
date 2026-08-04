@@ -210,6 +210,16 @@ of it no longer fits a 200k token window. Its pre-registration is in `05-ceiling
 for the same two reasons 04 has its own: it was fixed later, and it runs against a private
 codebase, so it publishes prompt hashes instead of prompts.
 
+## Experiment 06: do two uncoordinated changes compose?
+
+Added after 05, and it is the first experiment to touch the second clause of the hypothesis.
+Experiments 02, 04 and 05 all measured context per change and all three found nothing for BPT to
+improve, which leaves "independent changes in parallel without coordination" as the only claim
+that could still change the answer. It fires no runs: experiment 05's 25 patches were each
+produced by an agent working alone in its own copy of the same base commit, which is already
+parallel work without coordination, so this experiment composes patches that already exist.
+Pre-registration in `06-parallel-composition/README.md`.
+
 ## Layout
 
 ```
@@ -230,6 +240,8 @@ experiments/
     README.md                    its own pre-registration, and the prompt hashes
   05-ceiling-at-scale/
     README.md                    same, for the repeat on a larger codebase
+  06-parallel-composition/
+    README.md                    same, for the composition probe on 05's patches
 ```
 
 ## Running

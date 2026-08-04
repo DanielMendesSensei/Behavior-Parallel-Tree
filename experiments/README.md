@@ -230,6 +230,17 @@ would be choosing a meaning after seeing them, so 07 generates its own data: two
 runs, seven pairs that each involve at least one of them, and a positive control registered in
 advance rather than added afterwards. Pre-registration in `07-parallel-shared-registry/README.md`.
 
+## Experiment 08: how much of the ceiling was the specification?
+
+Experiments 04 and 05 both wrote the same caveat before their runs: every request stated every
+rule its hidden suite would check, which is a contract in prose handed to the conventional arm
+for free. Named three times, measured zero. 08 removes it and changes nothing else, so the
+result compares directly against the 25 of 25 those same five cells already scored. The guard
+against repeating experiment 03 is a rule by rule classification: definitional rules, the ones
+whose removal would make the model guess, stay in the prompt; conventional rules, the ones whose
+answer is visible in neighbouring code, come out, and the suites keep checking them. Pre-registration
+in `08-thin-request/README.md`.
+
 ## Layout
 
 ```
@@ -254,6 +265,8 @@ experiments/
     README.md                    same, for the composition probe on 05's patches
   07-parallel-shared-registry/
     README.md                    same, for the redesigned parallelism test
+  08-thin-request/
+    README.md                    same, for the thin request sweep
 ```
 
 ## Running

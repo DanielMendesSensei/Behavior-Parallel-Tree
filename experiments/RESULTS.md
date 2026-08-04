@@ -609,3 +609,68 @@ which is the reading that survives that confound rather than falling to it.
 
 And the second half of the bet, independent changes running in parallel without coordination,
 has still never been tested.
+
+## Experiment 06: do two uncoordinated changes compose?
+
+### What was run
+
+Nothing was run. Experiment 05's 25 patches were each produced by an agent alone in its own copy
+of the same base commit, with no knowledge that the other runs existed, which is already what
+parallel work without coordination means. This experiment is the step nobody had taken: putting
+pairs of them back together and looking for damage. Zero tokens.
+
+Thirty combinations, six pairs of five run indexes. Three pairs whose runs touched no file in
+common, three whose runs shared `views.py` and in one case `rate_limit_service.py` as well.
+
+### The numbers
+
+| Kind | combinations | textual conflicts | order dependent | semantic conflicts |
+| --- | --- | --- | --- | --- |
+| disjoint | 15 | 0 | 0 | 0 |
+| overlapping | 15 | 0 | 0 | 0 |
+
+Every composed tree was checked properly rather than assumed: both acceptance suites ran against
+it and passed in full, and the gate came back clean on all thirty.
+
+### Which pre-registered criterion was hit, and it is the unhappy one
+
+The void clause. The pre-registration said the overlapping pairs were there to prove the
+detector can detect, and that fewer than three conflicts among them would make a clean disjoint
+result indistinguishable from a broken checker. Zero came back. So the disjoint result is void
+as a statement about parallelism, and it is reported that way rather than as the ceiling it
+superficially resembles.
+
+That clause was written before the composition, with the note that it was the likely outcome.
+It was.
+
+### The finding that is real, even though the probe is void
+
+**"Same file" is not "same behavior", and the gap between them is where this probe fell in.**
+Three pairs that both edit `views.py`, a 1,700 line module, composed fifteen times out of
+fifteen without a single conflict of any kind. Agents edit at the granularity of a function.
+Two changes to different functions in one module do not collide, textually or semantically, even
+when the module is large and the changes are substantial.
+
+That is worth stating plainly because it is the reason the probe could not answer its question.
+A pair was needed that collides inside the same function, and file overlap was the wrong proxy
+for building one.
+
+### What the positive control adds, and what it does not
+
+The void clause reasons that a clean sweep could mean a broken checker. That is testable, so it
+was tested afterwards: two patches from the same cell, two agents solving the same request, were
+composed. The second patch failed to apply, in both pairs tried. The checker detects.
+
+So the thirty clean results are real data rather than an artifact, and that is worth having. It
+is not, however, the evidence the pre-registered criterion asked for, and it is not being
+swapped in for it now. The disjoint result stays void.
+
+### What this costs, and what comes next
+
+The probe was free and it bought one useful negative: the cheap version of this question cannot
+be answered with the patches already on disk. The next version has to cost tokens. It needs two
+change requests written to collide inside a single function, run as their own cells, and then
+composed the same way.
+
+Until that runs, the second clause of the hypothesis remains what it has been since the
+beginning: untested.

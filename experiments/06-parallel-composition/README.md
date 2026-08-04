@@ -99,3 +99,25 @@ worktrees, merged at the end.
 The same constraint as experiments 04 and 05. The patches are diffs of a private codebase, so
 they stay outside this repository along with the acceptance suites and the composed trees. What
 is published is the design, the criteria above, and the table in `RESULTS.md`.
+
+## Amendment, after the composition and before the result was written
+
+Everything above this heading is the pre-registration as committed before the first
+combination was scored. This section was added afterwards.
+
+**One check was added that the pre-registration did not name: a positive control.** The
+criterion above voids the disjoint result when the overlapping side produces fewer than three
+conflicts, and it gives the reason: a clean result would be indistinguishable from a checker
+that cannot detect anything. That is a statement about what the evidence licenses, and it can
+be tested directly rather than assumed, so it was.
+
+Two patches from the *same* cell, two different agents solving the same request, were composed.
+Both pairs tried came back with the second patch failing to apply. The checker detects.
+
+**This does not convert the void into a ceiling, and it is worth saying why.** The
+pre-registered clause did not ask whether the checker works in principle. It asked whether the
+overlapping pairs, the ones chosen in advance as the hard case, would produce conflicts. They
+did not. The positive control tells us the 30 clean results are real data rather than an
+artifact, which is worth knowing, but it was not the evidence the criterion asked for and it is
+not being substituted for it after the fact. The disjoint result stays void as a claim about
+parallelism.

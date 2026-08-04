@@ -199,6 +199,17 @@ this file would blur the order that `git log` is supposed to prove, and it runs 
 private codebase, so its prompts and raw output cannot live here. That file records the sha256
 of each prompt instead, and says plainly what a reader of this repository can and cannot verify.
 
+## Experiment 05: does the ceiling survive a codebase three times the size?
+
+Added after 04 cancelled the migration, and it attacks 04's own main limitation rather than
+its conclusion. 04 measured a 5,300 line backend, which never stressed the context limits BPT
+is built around, so its ceiling could be a fact about agents or a fact about small
+repositories. 05 runs the same instrument, the same five shapes, the same thresholds and the
+same model against a codebase 2.6 times larger by source volume, large enough that reading all
+of it no longer fits a 200k token window. Its pre-registration is in `05-ceiling-at-scale/README.md`,
+for the same two reasons 04 has its own: it was fixed later, and it runs against a private
+codebase, so it publishes prompt hashes instead of prompts.
+
 ## Layout
 
 ```
@@ -217,6 +228,8 @@ experiments/
     checklist.md                 the ten structural consistency items
   04-conventional-ceiling/
     README.md                    its own pre-registration, and the prompt hashes
+  05-ceiling-at-scale/
+    README.md                    same, for the repeat on a larger codebase
 ```
 
 ## Running

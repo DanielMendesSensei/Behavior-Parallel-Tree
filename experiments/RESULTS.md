@@ -703,11 +703,12 @@ model's own usage envelope into each record, so tokens and wall clock are read o
 | 05 ceiling at scale | 25 | 8.48 | 88,132 | 8,920,163 | 737,809 | 19.0 min |
 | 06 parallel composition | 0 | 0.00 | 0 | 0 | 0 | none |
 | 07 parallel shared registry | 10 | 3.34 | 29,536 | 2,860,011 | 337,841 | 7.7 min |
-| **total** | **198** | **24.46** | **589,349** | **15,820,958** | **1,463,286** | **120.0 min** |
+| 08 thin request | 30 | 12.53 | 130,723 | 13,159,996 | 1,062,062 | 31.8 min |
+| **total** | **228** | **36.99** | **720,072** | **28,980,954** | **2,525,348** | **151.8 min** |
 
-The run counts for 01 and 03 include the voided sweeps, 14 and 30 runs respectively, because
-they were paid for and throwing them out of the accounting would understate what being wrong
-costs.
+The run counts for 01, 03 and 08 include their voided sweeps, 14, 30 and 5 runs respectively,
+because they were paid for and throwing them out of the accounting would understate what being
+wrong costs.
 
 ### Where the money actually goes
 
@@ -832,3 +833,80 @@ the comparison would need the arm that experiment 04 cancelled. The finding here
 it is the first one in seven experiments that points that way at all: there is a real, if small,
 coordination cost in a layer-first tree, and it lives at the insertion point inside a shared
 module rather than in the registry everyone expected.
+
+## Experiment 08: how much of the ceiling was the specification?
+
+### What was run
+
+The same five cells experiments 05 and 07 already scored 25 of 25 on, with one thing changed:
+the requests were cut roughly in half. Every rule that says what the feature is stayed. Every
+rule that says how this codebase does things came out, and the acceptance suites kept checking
+them, byte for byte the same suites as before.
+
+Thirty runs, 12.53 usd, 31.8 minutes of model time. Five of those runs are void, and they are
+counted in the cost because they were paid for.
+
+| Cell | full request | thin request | first-attempt |
+| --- | --- | --- | --- |
+| `cr1` derived field | 169 words | 73 | 5/5 |
+| `cr2` new rule | 332 words | 187 (revision 2) | 5/5 |
+| `cr3` new behavior | 234 words | 105 | 5/5 |
+| `cr6` history summary | 196 words | 126 | 5/5 |
+| `cr7` download presets | 197 words | 103 | 5/5 |
+
+### Which pre-registered criterion was hit
+
+**The specification was not doing the work.** 25 of 25, no cell below 5 of 5, which clears the
+threshold of 23 with no cell under 4.
+
+The conventions the agent inferred, none of them present in the request it was given: a derived
+field returns null when its inputs are missing, the success envelope is
+`{'success': True, 'data': ...}`, an endpoint next to a public one is public, an endpoint next to
+an authenticated one requires authentication, an unavailable service answers 503 with a code, a
+summary counts only the calling user's own rows, and neighbouring endpoints keep working.
+
+It found all of that by reading the code beside the code it was changing.
+
+### The cell that had to run twice, and why that matters more than the number
+
+`cr2` failed 0 of 5 on the first thin revision. Reading the raw output rather than the summary
+showed every failure was on a rule the pre-registration had classified as conventional, and the
+classification was wrong.
+
+The suite asserted that the new limit's message is empty on the passing path. The codebase does
+not say that: inside the very same function, four sibling entries initialise to an empty message
+and the audio path then overwrites its own with `"Audio download allowed"` on success. Both
+patterns are there. The suite also asserted an exact label, `Container Limit Exceeded`, while the
+model's choices list already carries two naming patterns and the model picked the other one,
+`Lossless Container Blocked`.
+
+Neither is discoverable. Both are naming choices, and naming choices are definitional. The cell
+was voided under the rule this experiment pre-registered for exactly this, the five runs are kept
+in `runs-thin-void-r1/` with the reason, the two strings went back into the request, and it ran
+again at 5 of 5.
+
+**What those voided runs still show is the sharper finding.** Every one of them passed 16 or 17
+of 18 assertions. The whole rule came out right every time: the refusal, both containers, the
+case insensitivity, the plan distinction, the exact refusal message, the precedence over four
+older limits, the view translation, and the audit row carrying the right reason. What the thin
+request cost was two strings the model had to invent a name for.
+
+So the honest description of what a precise specification buys, on this evidence, is not
+correctness. It is agreement on arbitrary names.
+
+### What this closes
+
+Experiments 04 and 05 both hit the ceiling and both wrote the same caveat before their runs: the
+requests stated every rule, which is a contract in prose handed to the conventional arm for free.
+That caveat was the last live objection to both results. It is now measured, and it does not
+hold. Halving the requests did not move first-attempt success at all.
+
+### What this does not say
+
+Nothing about the tree. This design cannot distinguish a layout from a specification and never
+could, whichever way the number fell.
+
+It also does not say a contract is worthless. It says that on a real codebase with legible
+conventions, an agent recovers the conventions from the code, and what a written contract adds
+is the naming agreement, which matters when two parties have to match exactly and does not
+matter for whether the change works.

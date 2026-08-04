@@ -754,3 +754,81 @@ one that cost the most, 05 at 8.48 usd, confirmed a result rather than changing 
 That ordering is worth keeping in view. The rule it produced, probe the cheap arm before
 building the expensive one, has now paid for itself twice, and both times the probe was worth
 less than a tenth of what it prevented.
+
+## Experiment 07: do different behaviors sharing a module compose?
+
+### What was run
+
+Two new cells added to the experiment 05 fixture, both new endpoints, both landing in
+`views.py` and in the routing table that other cells already write into. Ten runs, 3.34 usd,
+7.7 minutes of model time. Both scored 5 of 5 on first attempt, inside their boundaries, gate
+clean.
+
+Then the composition: seven pairs, each involving at least one of the two new cells so that
+nothing scored in experiment 06 is reused. Thirty five treatment combinations. Plus the four
+positive control combinations, registered in advance this time, each pairing two runs of the
+same cell.
+
+### The numbers, and there are two of them
+
+| Composition model | treatment | conflicts | criterion it fires |
+| --- | --- | --- | --- |
+| strict `git apply` | 35 | 2 | room exists |
+| branch merge | 35 | 1 | exactly one, no arm built |
+| positive control (both models) | 4 | 4 | control passes |
+
+Both rows come from the same ten runs. Nothing was re-rolled. The difference is only how
+strictly the two patches are put together, and the pre-registration allowed both readings
+without noticing, which is recorded as a defect in its amendment.
+
+Under strict application the conflicts are combinations 2 and 3 of `cr6`+`cr7`. Under a real
+branch merge, combination 3 resolves automatically and only combination 2 survives. Every other
+pair composed cleanly under both models, and since a strict application succeeding implies a
+merge would too, the other six pairs need no separate merge run to be counted clean.
+
+### What actually collides, which is not what was predicted
+
+The pre-registration expected the routing table to be the collision point, on the argument that
+a registry every behavior must write into is where parallel work in a layer-first tree collides.
+That was wrong. `urls.py` auto merged in all five combinations of the two new cells. Git handles
+two routes added a few lines apart without help.
+
+The conflict that does survive is in `views.py`, and it is the plainest kind: both agents
+inserted their new view at the same anchor, so the merge sees two different blocks of new code
+in the same place and refuses to guess the order. Two independent behaviors, one module, one
+insertion point.
+
+That is the case BPT's island rule is built to prevent, since each behavior would own its own
+file and there would be no shared anchor to fight over. It is also the case a human resolves in
+about thirty seconds. Both of those are true at once and the result should not be reported as
+only one of them.
+
+### The control worked, which is the difference from experiment 06
+
+All four positive control combinations conflicted, under both composition models. Two agents
+handed the same request produce patches that cannot be stacked, every time. So unlike experiment
+06, this instrument has been seen detecting before its clean results were believed.
+
+### Which pre-registered criterion was hit
+
+Both, depending on the reading, and the honest answer is that the pre-registration was
+ambiguous rather than that one of the numbers is wrong.
+
+Read strictly, two of 35 conflict and the criterion says room exists, which would license a
+pre-registration for building the arm experiment 04 cancelled. Read as a branch merge, which is
+how parallel work actually lands and which this experiment's own design section says it models,
+one of 35 conflicts and the criterion says report the instance and build nothing.
+
+Neither is being chosen by preference. What the two readings agree on is the substance: across
+35 combinations of independent behaviors in shared modules, uncoordinated agents produced work
+that merged and stayed correct in at least 34 of them, and the one failure is a textual
+insertion clash rather than two changes being each correct alone and wrong together. Not a
+single semantic conflict appeared anywhere in the sweep.
+
+### What this still does not decide
+
+Whether BPT's layout would have prevented that one conflict. It is a conventional arm alone, and
+the comparison would need the arm that experiment 04 cancelled. The finding here is narrower and
+it is the first one in seven experiments that points that way at all: there is a real, if small,
+coordination cost in a layer-first tree, and it lives at the insertion point inside a shared
+module rather than in the registry everyone expected.

@@ -101,3 +101,48 @@ nobody builds that way.
 The same constraint as experiments 04, 05 and 06. The prompts, patches, suites and composed
 trees are diffs and tests of a private codebase and stay outside. Published here: the design,
 the criteria, the prompt hashes, and the table in `RESULTS.md`.
+
+## Amendment, after the composition and before the result was written
+
+Everything above this heading is the pre-registration as committed before the first run. This
+section was added afterwards and it records a defect in it.
+
+**The pre-registration did not say what "fails to apply" means, and the two readings fire
+different criteria.**
+
+The conflict definition above says a combination conflicts when "a patch fails to apply". The
+composer implemented that with `git apply`, which demands exact context. Under that reading the
+treatment produced **2 conflicts in 35**, which is the "room exists" threshold.
+
+But two paragraphs later the same file says this models parallelism "the way real tooling and
+BPT itself do: separate worktrees, merged at the end". Merging worktrees is a three way merge,
+not a strict patch application, and it tolerates edits that sit near each other without touching
+the same lines. Modelled that way, with each change committed on its own branch off the frozen
+base and merged, the treatment produces **1 conflict in 35**, which is the "exactly one" clause
+and its consequence is that no arm gets built.
+
+Both numbers come from the same runs. The difference is entirely in how strictly the composition
+is done, and the pre-registration licensed both without noticing.
+
+**Neither reading is being chosen here.** Picking the one that fires the criterion we prefer,
+after seeing which is which, is the exact move this whole directory exists to prevent. Both are
+reported in `RESULTS.md` with the criterion each one hits, and the decision that follows is
+taken in the open with both numbers visible.
+
+For what it is worth as a judgement rather than a measurement: the branch merge is the more
+faithful model of the question, because it is how parallel work actually lands and because this
+file says so itself. The strict reading is the more literal one. That is the tension, stated
+rather than resolved by preference.
+
+**The control passed.** All 4 positive control combinations conflicted, so unlike experiment 06
+this instrument has been seen detecting.
+
+**A prediction in the pre-registration turned out wrong, and it is worth recording.** The design
+expected the routing table to be the collision point, on the reasoning that a registry every
+behavior has to write into is where parallel work in a layer-first tree collides. It was not.
+`urls.py` auto merged in all five combinations of the two new cells. The conflict that does
+exist is in `views.py`, where two agents inserted a new view at the same anchor, and git cannot
+decide which block comes first.
+
+That is still a collision between two independent behaviors in a shared module, which is the
+case the experiment was built for. It just happened in the module rather than in the registry.
